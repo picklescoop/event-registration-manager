@@ -1,3 +1,7 @@
+## 1.3.39
+- Show each form's embed shortcode directly in Super Forms → All Forms.
+- Add one-click Copy buttons to the form list, with clipboard fallback.
+
 ## 1.3.38
 - Confirmation emails use the currently saved meeting link and do not fall back to a static link when automatic creation fails.
 - Show administrator warnings on appointment records and send deduplicated meeting creation failure emails.
