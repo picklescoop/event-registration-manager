@@ -1,3 +1,9 @@
+## 1.3.38
+- Confirmation emails use the currently saved meeting link and do not fall back to a static link when automatic creation fails.
+- Show administrator warnings on appointment records and send deduplicated meeting creation failure emails.
+- Guard Zoom, Teams, and Discord creation with an entry-specific lock to reduce duplicate meetings.
+- Provider rescheduling and cancellation synchronization remains pending.
+
 ## 1.3.37
 - Added automatic Microsoft Teams meeting creation via Microsoft Graph application credentials and organizer access policy.
 - Added automatic Discord voice-channel invitation creation via bot credentials.
