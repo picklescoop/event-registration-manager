@@ -1,3 +1,8 @@
+## 1.3.40
+- Hide appointment location, online meeting integration, and appointment scheduling settings in the form builder unless Form Type is Appointment Request.
+- Show appointment settings immediately when Appointment Request is selected; hide them again when another form type is chosen.
+- Preserve existing appointment configuration when switching form types.
+
 ## 1.3.39
 - Show each form's embed shortcode directly in Super Forms → All Forms.
 - Add one-click Copy buttons to the form list, with clipboard fallback.
