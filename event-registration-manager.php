@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Form, Cart and Registration Creator
  * Description: Reusable event forms with configurable fields, optional payments, uploads, receipts, and registration management.
- * Version: 1.3.36
+ * Version: 1.3.38
  * Requires PHP: 7.4
  * License: GPL-2.0-or-later
  * Text Domain: event-registration-manager
@@ -12,7 +12,7 @@ require_once __DIR__.'/includes/google-calendar.php';
 require_once __DIR__.'/includes/shipping-providers.php';
 require_once __DIR__.'/includes/shippo.php';
 final class ERM_Plugin {
- const VERSION='1.3.36';
+ const VERSION='1.3.38';
  static $reschedule_entry=0;
  const DEFAULT_FIELDS=[['id'=>'name','label'=>'Full Name','type'=>'text','required'=>true],['id'=>'business','label'=>'Business / Organization','type'=>'text','required'=>false],['id'=>'address','label'=>'Mailing Address','type'=>'textarea','required'=>false],['id'=>'phone','label'=>'Phone Number','type'=>'tel','required'=>false],['id'=>'email','label'=>'Email Address','type'=>'email','required'=>true],['id'=>'products','label'=>'Products Sold','type'=>'textarea','required'=>false]];
  static function init(){ERM_Google_Calendar::init();ERM_Shipping_Providers::init();ERM_Shippo::init();add_action('admin_post_nopriv_erm_manage_appointment',[__CLASS__,'customer_appointment']);add_action('admin_post_erm_manage_appointment',[__CLASS__,'customer_appointment']);add_action('admin_post_erm_reschedule',[__CLASS__,'reschedule']);add_action('wp_ajax_erm_available_slots',[__CLASS__,'available_slots']);add_action('wp_ajax_nopriv_erm_available_slots',[__CLASS__,'available_slots']);add_action('init',[__CLASS__,'types']);add_action('add_meta_boxes',[__CLASS__,'metaboxes']);add_action('save_post_erm_event',[__CLASS__,'save_event']);add_shortcode('event_registration',[__CLASS__,'form']);add_shortcode('event_registrations',[__CLASS__,'public_list']);add_action('admin_post_nopriv_erm_submit',[__CLASS__,'submit']);add_action('admin_post_erm_submit',[__CLASS__,'submit']);add_action('admin_menu',[__CLASS__,'admin_menu']);add_action('admin_head',[__CLASS__,'hide_dashboard_submenu']);add_action('admin_init',[__CLASS__,'redirect_forms_home']);add_action('admin_post_erm_status',[__CLASS__,'status']);add_action('admin_post_erm_save_payment_accounts',[__CLASS__,'save_payment_accounts']);add_action('admin_post_erm_record_payment',[__CLASS__,'record_payment']);add_action('admin_post_erm_export',[__CLASS__,'export']);add_action('admin_post_erm_reply',[__CLASS__,'reply']);add_action('admin_post_erm_checkin',[__CLASS__,'checkin']);add_action('admin_post_erm_undo_checkin',[__CLASS__,'undo_checkin']);add_action('admin_post_erm_ticket',[__CLASS__,'ticket_page']);add_action('admin_post_nopriv_erm_ticket',[__CLASS__,'ticket_page']);add_action('admin_post_erm_scanner',[__CLASS__,'scanner_page']);add_action('admin_enqueue_scripts',[__CLASS__,'admin_assets']);add_action('wp_enqueue_scripts',[__CLASS__,'styles']);add_filter('post_row_actions',[__CLASS__,'clone_row_action'],10,2);add_action('admin_post_erm_clone_form',[__CLASS__,'clone_form']);add_action('admin_post_erm_export_form',[__CLASS__,'export_form']);add_action('admin_post_erm_import_form',[__CLASS__,'import_form']);}
@@ -511,15 +511,43 @@ Manage your appointment: ".self::appointment_manage_url($entry).self::appointmen
   if($mode==='online'&&$kind!=='cancelled'){
    $url=get_post_meta($entry,'_erm_meeting_url',true);
    if(!$url&&$kind==='confirmed'){$platform=$s['appointment_online_platform']??'';if($platform==='zoom')$url=self::create_zoom_meeting($entry,$s);elseif($platform==='teams')$url=self::create_teams_meeting($entry,$s);elseif($platform==='discord')$url=self::create_discord_invite($entry,$s);}
-   if(!$url)$url=$s['appointment_online_url']??'';
+   if(!$url&&$kind==='confirmed')self::notify_meeting_failure($entry);
+   if(!$url&&!in_array($s['appointment_online_platform']??'', ['zoom','teams','discord'],true))$url=$s['appointment_online_url']??'';
    $body.="Platform: ".ucfirst($s['appointment_online_platform']??'online')."\n";
-   $body.=$url?"Join meeting: ".$url."\n":"The organizer will provide joining details.\n";
+   $body.=$url?"Join meeting: ".$url."\n":"Meeting link pending: the organizer has been notified.\n";
   }
   return $body;
  }
+ static function meeting_creation_lock($entry){
+  $key='erm_meeting_create_'.$entry;
+  if(!add_option($key,(string)time(),'','no')){
+   $age=(int)get_option($key,0);
+   if($age>0&&time()-$age>120){delete_option($key);if(!add_option($key,(string)time(),'','no'))return false;}
+   else return false;
+  }
+  register_shutdown_function(static function()use($key){delete_option($key);});
+  return true;
+ }
+ static function notify_meeting_failure($entry){
+  $error=(string)get_post_meta($entry,'_erm_meeting_error',true);
+  if(!$error)return;
+  $fingerprint=hash('sha256',$error);
+  if(get_post_meta($entry,'_erm_meeting_alert_hash',true)===$fingerprint)return;
+  $recipient=get_option('admin_email');
+  if(is_email($recipient)){
+   wp_mail($recipient,'Super Forms: meeting creation failed for appointment #'.$entry,
+    "Appointment #".$entry." requires attention.\n".get_the_title((int)get_post_meta($entry,'_erm_event',true))."\n".$error."\n".admin_url('edit.php?post_type=erm_event&page=erm-registrations&entry='.$entry));
+   update_post_meta($entry,'_erm_meeting_alert_hash',$fingerprint);
+  }
+ }
+ static function meeting_warning($entry){
+  $error=(string)get_post_meta($entry,'_erm_meeting_error',true);
+  if($error)echo '<div class="notice notice-error inline"><p><strong>Online meeting needs attention:</strong> '.esc_html($error).'</p></div>';
+ }
  static function create_zoom_meeting($entry,$s){
   if(get_post_meta($entry,'_erm_meeting_url',true))return get_post_meta($entry,'_erm_meeting_url',true);
-  foreach(['zoom_account_id','zoom_client_id','zoom_client_secret'] as $k)if(empty($s[$k]))return '';
+  if(!self::meeting_creation_lock($entry))return (string)get_post_meta($entry,'_erm_meeting_url',true);
+  foreach(['zoom_account_id','zoom_client_id','zoom_client_secret'] as $k)if(empty($s[$k])){update_post_meta($entry,'_erm_meeting_error','Zoom credentials are incomplete.');return '';}
   $token_response=wp_safe_remote_post('https://zoom.us/oauth/token',['timeout'=>15,'headers'=>['Authorization'=>'Basic '.base64_encode($s['zoom_client_id'].':'.$s['zoom_client_secret'])],'body'=>['grant_type'=>'account_credentials','account_id'=>$s['zoom_account_id']]]);
   if(is_wp_error($token_response)||wp_remote_retrieve_response_code($token_response)!==200)return '';
   $token=json_decode(wp_remote_retrieve_body($token_response),true);if(empty($token['access_token']))return '';
@@ -530,12 +558,13 @@ Manage your appointment: ".self::appointment_manage_url($entry).self::appointmen
   $response=wp_safe_remote_post('https://api.zoom.us/v2/users/'.$host.'/meetings',['timeout'=>20,'headers'=>['Authorization'=>'Bearer '.$token['access_token'],'Content-Type'=>'application/json'],'body'=>wp_json_encode($payload)]);
   if(is_wp_error($response)||wp_remote_retrieve_response_code($response)!==201){update_post_meta($entry,'_erm_meeting_error','Zoom meeting could not be created. Check credentials and API permissions.');return '';}
   $meeting=json_decode(wp_remote_retrieve_body($response),true);$url=esc_url_raw($meeting['join_url']??'');
-  if($url){update_post_meta($entry,'_erm_meeting_url',$url);update_post_meta($entry,'_erm_meeting_id',sanitize_text_field((string)($meeting['id']??'')));delete_post_meta($entry,'_erm_meeting_error');}
+  if($url){update_post_meta($entry,'_erm_meeting_url',$url);update_post_meta($entry,'_erm_meeting_id',sanitize_text_field((string)($meeting['id']??'')));delete_post_meta($entry,'_erm_meeting_error');delete_post_meta($entry,'_erm_meeting_alert_hash');}
   return $url;
  }
  static function create_teams_meeting($entry,$s){
   if(get_post_meta($entry,'_erm_meeting_url',true))return get_post_meta($entry,'_erm_meeting_url',true);
-  foreach(['teams_tenant_id','teams_client_id','teams_client_secret','teams_user_id'] as $key)if(empty($s[$key]))return '';
+  if(!self::meeting_creation_lock($entry))return (string)get_post_meta($entry,'_erm_meeting_url',true);
+  foreach(['teams_tenant_id','teams_client_id','teams_client_secret','teams_user_id'] as $key)if(empty($s[$key])){update_post_meta($entry,'_erm_meeting_error','Teams credentials are incomplete.');return '';}
   $tenant=rawurlencode($s['teams_tenant_id']);
   $token=wp_safe_remote_post('https://login.microsoftonline.com/'.$tenant.'/oauth2/v2.0/token',['timeout'=>20,'body'=>['client_id'=>$s['teams_client_id'],'client_secret'=>$s['teams_client_secret'],'scope'=>'https://graph.microsoft.com/.default','grant_type'=>'client_credentials']]);
   if(is_wp_error($token)||wp_remote_retrieve_response_code($token)!==200){update_post_meta($entry,'_erm_meeting_error','Microsoft Teams authentication failed.');return '';}
@@ -548,17 +577,18 @@ Manage your appointment: ".self::appointment_manage_url($entry).self::appointmen
   $response=wp_safe_remote_post($endpoint,['timeout'=>20,'headers'=>['Authorization'=>'Bearer '.$auth['access_token'],'Content-Type'=>'application/json'],'body'=>wp_json_encode($payload)]);
   if(is_wp_error($response)||wp_remote_retrieve_response_code($response)!==201){update_post_meta($entry,'_erm_meeting_error','Teams meeting creation failed. Verify OnlineMeetings.ReadWrite.All application permission and the organizer application access policy.');return '';}
   $meeting=json_decode(wp_remote_retrieve_body($response),true);$url=esc_url_raw($meeting['joinWebUrl']??'');
-  if($url){update_post_meta($entry,'_erm_meeting_url',$url);update_post_meta($entry,'_erm_meeting_id',sanitize_text_field($meeting['id']??''));update_post_meta($entry,'_erm_meeting_provider','teams');delete_post_meta($entry,'_erm_meeting_error');}
+  if($url){update_post_meta($entry,'_erm_meeting_url',$url);update_post_meta($entry,'_erm_meeting_id',sanitize_text_field($meeting['id']??''));update_post_meta($entry,'_erm_meeting_provider','teams');delete_post_meta($entry,'_erm_meeting_error');delete_post_meta($entry,'_erm_meeting_alert_hash');}
   return $url;
  }
  static function create_discord_invite($entry,$s){
   if(get_post_meta($entry,'_erm_meeting_url',true))return get_post_meta($entry,'_erm_meeting_url',true);
-  if(empty($s['discord_bot_token'])||!preg_match('/^[0-9]{10,25}$/',(string)($s['discord_channel_id']??'')))return '';
+  if(!self::meeting_creation_lock($entry))return (string)get_post_meta($entry,'_erm_meeting_url',true);
+  if(empty($s['discord_bot_token'])||!preg_match('/^[0-9]{10,25}$/',(string)($s['discord_channel_id']??''))){update_post_meta($entry,'_erm_meeting_error','Discord credentials are missing or invalid.');return '';}
   $endpoint='https://discord.com/api/v10/channels/'.$s['discord_channel_id'].'/invites';
   $response=wp_safe_remote_post($endpoint,['timeout'=>20,'headers'=>['Authorization'=>'Bot '.$s['discord_bot_token'],'Content-Type'=>'application/json'],'body'=>wp_json_encode(['max_age'=>604800,'max_uses'=>0,'temporary'=>false,'unique'=>true])]);
   if(is_wp_error($response)||wp_remote_retrieve_response_code($response)!==200){update_post_meta($entry,'_erm_meeting_error','Discord invite creation failed. Verify bot access and Create Instant Invite permission.');return '';}
   $invite=json_decode(wp_remote_retrieve_body($response),true);$code=preg_replace('/[^A-Za-z0-9]/','',(string)($invite['code']??''));if(!$code)return '';
-  $url='https://discord.gg/'.$code;update_post_meta($entry,'_erm_meeting_url',$url);update_post_meta($entry,'_erm_meeting_id',$code);update_post_meta($entry,'_erm_meeting_provider','discord');delete_post_meta($entry,'_erm_meeting_error');return $url;
+  $url='https://discord.gg/'.$code;update_post_meta($entry,'_erm_meeting_url',$url);update_post_meta($entry,'_erm_meeting_id',$code);update_post_meta($entry,'_erm_meeting_provider','discord');delete_post_meta($entry,'_erm_meeting_error');delete_post_meta($entry,'_erm_meeting_alert_hash');return $url;
  }
  static function appointment_email($entry,$kind,$old=''){if($kind==='cancelled'||($kind==='confirmed')||($kind==='rescheduled'&&get_post_meta($entry,'_erm_registration_status',true)==='confirmed'))ERM_Google_Calendar::sync($entry,$kind);
   $event=(int)get_post_meta($entry,'_erm_event',true);
@@ -648,6 +678,7 @@ Manage your appointment: ".self::appointment_manage_url($entry).self::appointmen
  }
  static function entry_detail($entry){
   if(!current_user_can('manage_options')||get_post_type($entry)!=='erm_entry')return;
+  self::meeting_warning($entry);
   self::ticket_admin_panel($entry);$event=(int)get_post_meta($entry,'_erm_event',true);$data=(array)get_post_meta($entry,'_erm_data',true);$settings=self::settings($event);$email='';
   foreach($settings['fields'] as $f){if(($f['type']??'')==='email'&&is_email($data[$f['id']]??'')){$email=sanitize_email($data[$f['id']]);break;}}
   if(!$email&&is_email($data['email']??''))$email=sanitize_email($data['email']);
