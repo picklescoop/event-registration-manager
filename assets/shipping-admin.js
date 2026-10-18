@@ -1,0 +1,5 @@
+document.addEventListener('DOMContentLoaded',()=>{
+ const rows=document.querySelector('#fcrc-shipping-rows'),add=document.querySelector('#fcrc-add-shipping');if(!rows||!add)return;
+ add.addEventListener('click',()=>{const row=document.createElement('div');row.className='fcrc-shipping-row';[['Country','country','US','text'],['ZIP / postal prefix','prefix','70','text'],['Shipping cost ($)','price','0','number']].forEach(([label,key,value,type])=>{const l=document.createElement('label');l.textContent=label+' ';const i=document.createElement('input');i.name='erm_shipping['+key+'][]';i.type=type;i.value=value;if(key==='country')i.maxLength=2;if(key==='prefix')i.maxLength=12;if(type==='number'){i.min='0';i.max='100000';i.step='0.01'}l.append(i);row.append(l)});const remove=document.createElement('button');remove.type='button';remove.className='button-link-delete fcrc-remove-shipping';remove.textContent='Remove';row.append(remove);rows.append(row)});
+ rows.addEventListener('click',e=>{if(e.target.closest('.fcrc-remove-shipping'))e.target.closest('.fcrc-shipping-row').remove()});
+});
