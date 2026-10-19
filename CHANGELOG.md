@@ -1,3 +1,9 @@
+## 1.3.41
+- Consolidated the Super Forms WordPress sidebar into six sections: All Forms, Add New, Registrations, Appointments, Settings, and Help & Updates.
+- Removed duplicate All Forms entry and hidden redundant integration menu entries while keeping their underlying pages and existing URLs available.
+- Added grouped navigation hubs for registrations/payment review/check-in, appointments/Google Calendar, settings/shipping, and help/changelog.
+- The parent Super Forms menu continues to open the dashboard.
+
 ## 1.3.40
 - Hide appointment location, online meeting integration, and appointment scheduling settings in the form builder unless Form Type is Appointment Request.
 - Show appointment settings immediately when Appointment Request is selected; hide them again when another form type is chosen.
