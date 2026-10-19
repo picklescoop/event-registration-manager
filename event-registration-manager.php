@@ -425,8 +425,9 @@ Manage your appointment: ".self::appointment_manage_url($entry).self::appointmen
  static function admin_menu(){
   $parent='edit.php?post_type=erm_event';
   add_submenu_page($parent,'Super Forms Dashboard','Dashboard','manage_options','erm-dashboard',[__CLASS__,'dashboard_page']);
-  add_submenu_page($parent,'All Forms','All Forms','edit_posts','edit.php?post_type=erm_event&erm_view=list');
-  add_submenu_page($parent,'Registrations','Registrations','manage_options','erm-registrations',[__CLASS__,'entries_page']);
+  // WordPress supplies All Forms and Add New automatically for this post type.
+  add_submenu_page($parent,'Registrations','Registrations','manage_options','erm-registrations-hub',[__CLASS__,'registrations_hub_page']);
+  add_submenu_page($parent,'Submissions','Submissions','manage_options','erm-registrations',[__CLASS__,'entries_page']);
   add_submenu_page($parent,'Appointments','Appointments','manage_options','erm-appointment-hub',[__CLASS__,'appointment_hub_page']);
   add_submenu_page($parent,'Settings','Settings','manage_options','erm-settings-hub',[__CLASS__,'settings_hub_page']);
   add_submenu_page($parent,'Help & Updates','Help & Updates','edit_posts','erm-help-hub',[__CLASS__,'help_hub_page']);
@@ -445,7 +446,7 @@ Manage your appointment: ".self::appointment_manage_url($entry).self::appointmen
   global $submenu;
   $parent='edit.php?post_type=erm_event';
   if(empty($submenu[$parent]))return;
-  $hidden=['erm-dashboard','erm-shipping','erm-payment-review','erm-appointment-calendar','erm-payment-accounts','erm-transfer','erm-changelog','erm-scanner','erm-help','erm-google-calendar','erm-shipping-settings','erm-shipping-labels'];
+  $hidden=['erm-dashboard','erm-registrations','erm-shipping','erm-payment-review','erm-appointment-calendar','erm-payment-accounts','erm-transfer','erm-changelog','erm-scanner','erm-help','erm-google-calendar','erm-shipping-settings','erm-shipping-labels'];
   // Remove only sidebar entries, never registered admin pages or capabilities.
   foreach($submenu[$parent] as $index=>$item){
    if(in_array($item[2]??'',$hidden,true))unset($submenu[$parent][$index]);
@@ -458,6 +459,15 @@ Manage your appointment: ".self::appointment_manage_url($entry).self::appointmen
    echo '<a class="erm-action" href="'.esc_url(admin_url($item[1])).'"><strong>'.esc_html($item[0]).'</strong><small>'.esc_html($item[3]).'</small></a>';
   }
   echo '</div></div></div></div>';
+ }
+ static function registrations_hub_page(){
+  if(!current_user_can('manage_options'))return;
+  self::admin_header('Registrations','Submissions, payments and event check-in.');
+  self::hub_links([
+   ['Submissions','edit.php?post_type=erm_event&page=erm-registrations','manage_options','Review registrations and form responses'],
+   ['Payment Review','edit.php?post_type=erm_event&page=erm-payment-review','manage_options','Reconcile and manage payments'],
+   ['Event Check-In','edit.php?post_type=erm_event&page=erm-scanner','manage_options','Scan tickets and check in guests']
+  ]);
  }
  static function appointment_hub_page(){
   if(!current_user_can('manage_options'))return;
