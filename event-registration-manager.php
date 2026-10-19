@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Form, Cart and Registration Creator
  * Description: Reusable event forms with configurable fields, optional payments, uploads, receipts, and registration management.
- * Version: 1.3.40
+ * Version: 1.3.41
  * Requires PHP: 7.4
  * License: GPL-2.0-or-later
  * Text Domain: event-registration-manager
@@ -12,7 +12,7 @@ require_once __DIR__.'/includes/google-calendar.php';
 require_once __DIR__.'/includes/shipping-providers.php';
 require_once __DIR__.'/includes/shippo.php';
 final class ERM_Plugin {
- const VERSION='1.3.40';
+ const VERSION='1.3.41';
  static $reschedule_entry=0;
  const DEFAULT_FIELDS=[['id'=>'name','label'=>'Full Name','type'=>'text','required'=>true],['id'=>'business','label'=>'Business / Organization','type'=>'text','required'=>false],['id'=>'address','label'=>'Mailing Address','type'=>'textarea','required'=>false],['id'=>'phone','label'=>'Phone Number','type'=>'tel','required'=>false],['id'=>'email','label'=>'Email Address','type'=>'email','required'=>true],['id'=>'products','label'=>'Products Sold','type'=>'textarea','required'=>false]];
  static function init(){ERM_Google_Calendar::init();ERM_Shipping_Providers::init();ERM_Shippo::init();add_action('admin_post_nopriv_erm_manage_appointment',[__CLASS__,'customer_appointment']);add_action('admin_post_erm_manage_appointment',[__CLASS__,'customer_appointment']);add_action('admin_post_erm_reschedule',[__CLASS__,'reschedule']);add_action('wp_ajax_erm_available_slots',[__CLASS__,'available_slots']);add_action('wp_ajax_nopriv_erm_available_slots',[__CLASS__,'available_slots']);add_action('init',[__CLASS__,'types']);add_action('add_meta_boxes',[__CLASS__,'metaboxes']);add_action('save_post_erm_event',[__CLASS__,'save_event']);add_shortcode('event_registration',[__CLASS__,'form']);add_shortcode('event_registrations',[__CLASS__,'public_list']);add_action('admin_post_nopriv_erm_submit',[__CLASS__,'submit']);add_action('admin_post_erm_submit',[__CLASS__,'submit']);add_action('admin_menu',[__CLASS__,'admin_menu']);add_action('admin_head',[__CLASS__,'hide_dashboard_submenu']);add_action('admin_init',[__CLASS__,'redirect_forms_home']);add_action('admin_post_erm_status',[__CLASS__,'status']);add_action('admin_post_erm_save_payment_accounts',[__CLASS__,'save_payment_accounts']);add_action('admin_post_erm_record_payment',[__CLASS__,'record_payment']);add_action('admin_post_erm_export',[__CLASS__,'export']);add_action('admin_post_erm_reply',[__CLASS__,'reply']);add_action('admin_post_erm_checkin',[__CLASS__,'checkin']);add_action('admin_post_erm_undo_checkin',[__CLASS__,'undo_checkin']);add_action('admin_post_erm_ticket',[__CLASS__,'ticket_page']);add_action('admin_post_nopriv_erm_ticket',[__CLASS__,'ticket_page']);add_action('admin_post_erm_scanner',[__CLASS__,'scanner_page']);add_action('admin_enqueue_scripts',[__CLASS__,'admin_assets']);add_action('admin_footer-edit.php',[__CLASS__,'shortcode_copy_script']);add_action('admin_footer-post.php',[__CLASS__,'appointment_builder_visibility_script']);add_action('admin_footer-post-new.php',[__CLASS__,'appointment_builder_visibility_script']);add_action('wp_enqueue_scripts',[__CLASS__,'styles']);add_filter('manage_erm_event_posts_columns',[__CLASS__,'form_list_columns']);add_action('manage_erm_event_posts_custom_column',[__CLASS__,'form_list_column'],10,2);add_filter('post_row_actions',[__CLASS__,'clone_row_action'],10,2);add_action('admin_post_erm_clone_form',[__CLASS__,'clone_form']);add_action('admin_post_erm_export_form',[__CLASS__,'export_form']);add_action('admin_post_erm_import_form',[__CLASS__,'import_form']);}
@@ -422,7 +422,70 @@ Manage your appointment: ".self::appointment_manage_url($entry).self::appointmen
   $screen=get_current_screen();if(!$screen||$screen->id!=='edit-erm_event')return;
   echo '<script>document.addEventListener("click",function(e){const btn=e.target.closest(".erm-copy-shortcode");if(!btn)return;const code=btn.getAttribute("data-shortcode");const done=function(){btn.textContent="Copied!";setTimeout(function(){btn.textContent="Copy";},1600);};if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(code).then(done).catch(function(){window.prompt("Copy shortcode:",code);});}else{const el=document.createElement("textarea");el.value=code;el.style.position="fixed";el.style.opacity="0";document.body.appendChild(el);el.select();try{if(document.execCommand("copy"))done();else window.prompt("Copy shortcode:",code);}catch(err){window.prompt("Copy shortcode:",code);}el.remove();}});</script>';
  }
- static function admin_menu(){add_submenu_page('edit.php?post_type=erm_event','Super Forms Dashboard','Dashboard','manage_options','erm-dashboard',[__CLASS__,'dashboard_page']);add_submenu_page('edit.php?post_type=erm_event','All Forms','All Forms','edit_posts','edit.php?post_type=erm_event&erm_view=list');add_submenu_page('edit.php?post_type=erm_event','Shipping Providers','Shipping Providers','manage_options','erm-shipping',[ 'ERM_Shipping_Providers','settings_page']);add_submenu_page('edit.php?post_type=erm_event','Payment Review','Payment Review','manage_options','erm-payment-review',[__CLASS__,'payment_review_page']);add_submenu_page('edit.php?post_type=erm_event','Appointment Calendar','Appointment Calendar','manage_options','erm-appointment-calendar',[__CLASS__,'appointment_calendar_page']);add_submenu_page('edit.php?post_type=erm_event','Payment Accounts','Payment Accounts','manage_options','erm-payment-accounts',[__CLASS__,'payment_accounts_page']);add_submenu_page('edit.php?post_type=erm_event','Import / Export','Import / Export','manage_options','erm-transfer',[__CLASS__,'transfer_page']);add_submenu_page('edit.php?post_type=erm_event','Changelog','Changelog','edit_posts','erm-changelog',[__CLASS__,'changelog_page']);add_submenu_page('edit.php?post_type=erm_event','Registrations','Registrations','manage_options','erm-registrations',[__CLASS__,'entries_page']);add_submenu_page('edit.php?post_type=erm_event','Event Check-In','Event Check-In','manage_options','erm-scanner',[__CLASS__,'scanner_page']);add_submenu_page('edit.php?post_type=erm_event','Getting Started & Help','Getting Started & Help','edit_posts','erm-help',[__CLASS__,'help_page']);}
+ static function admin_menu(){
+  $parent='edit.php?post_type=erm_event';
+  add_submenu_page($parent,'Super Forms Dashboard','Dashboard','manage_options','erm-dashboard',[__CLASS__,'dashboard_page']);
+  add_submenu_page($parent,'All Forms','All Forms','edit_posts','edit.php?post_type=erm_event&erm_view=list');
+  add_submenu_page($parent,'Registrations','Registrations','manage_options','erm-registrations',[__CLASS__,'entries_page']);
+  add_submenu_page($parent,'Appointments','Appointments','manage_options','erm-appointment-hub',[__CLASS__,'appointment_hub_page']);
+  add_submenu_page($parent,'Settings','Settings','manage_options','erm-settings-hub',[__CLASS__,'settings_hub_page']);
+  add_submenu_page($parent,'Help & Updates','Help & Updates','edit_posts','erm-help-hub',[__CLASS__,'help_hub_page']);
+  // Keep original page registrations for permissions, bookmarks, and existing internal links.
+  add_submenu_page($parent,'Shipping Providers','Shipping Providers','manage_options','erm-shipping',['ERM_Shipping_Providers','settings_page']);
+  add_submenu_page($parent,'Payment Review','Payment Review','manage_options','erm-payment-review',[__CLASS__,'payment_review_page']);
+  add_submenu_page($parent,'Appointment Calendar','Appointment Calendar','manage_options','erm-appointment-calendar',[__CLASS__,'appointment_calendar_page']);
+  add_submenu_page($parent,'Payment Accounts','Payment Accounts','manage_options','erm-payment-accounts',[__CLASS__,'payment_accounts_page']);
+  add_submenu_page($parent,'Import / Export','Import / Export','manage_options','erm-transfer',[__CLASS__,'transfer_page']);
+  add_submenu_page($parent,'Changelog','Changelog','edit_posts','erm-changelog',[__CLASS__,'changelog_page']);
+  add_submenu_page($parent,'Event Check-In','Event Check-In','manage_options','erm-scanner',[__CLASS__,'scanner_page']);
+  add_submenu_page($parent,'Getting Started & Help','Getting Started & Help','edit_posts','erm-help',[__CLASS__,'help_page']);
+  add_action('admin_menu',[__CLASS__,'consolidate_menu'],999);
+ }
+ static function consolidate_menu(){
+  global $submenu;
+  $parent='edit.php?post_type=erm_event';
+  if(empty($submenu[$parent]))return;
+  $hidden=['erm-dashboard','erm-shipping','erm-payment-review','erm-appointment-calendar','erm-payment-accounts','erm-transfer','erm-changelog','erm-scanner','erm-help','erm-google-calendar','erm-shipping-settings','erm-shipping-labels'];
+  // Remove only sidebar entries, never registered admin pages or capabilities.
+  foreach($submenu[$parent] as $index=>$item){
+   if(in_array($item[2]??'',$hidden,true))unset($submenu[$parent][$index]);
+  }
+ }
+ static function hub_links($links){
+  echo '<div class="wrap"><div class="erm-shell"><div class="erm-panel" style="padding:24px"><div class="erm-action-grid">';
+  foreach($links as $item){
+   if(!current_user_can($item[2]))continue;
+   echo '<a class="erm-action" href="'.esc_url(admin_url($item[1])).'"><strong>'.esc_html($item[0]).'</strong><small>'.esc_html($item[3]).'</small></a>';
+  }
+  echo '</div></div></div></div>';
+ }
+ static function appointment_hub_page(){
+  if(!current_user_can('manage_options'))return;
+  self::admin_header('Appointments','Manage appointment bookings and calendar integrations.');
+  self::hub_links([
+   ['Appointment Calendar','edit.php?post_type=erm_event&page=erm-appointment-calendar','manage_options','Review bookings and availability'],
+   ['Google Calendar','edit.php?post_type=erm_event&page=erm-google-calendar','manage_options','Connect calendars and manage synchronization']
+  ]);
+ }
+ static function settings_hub_page(){
+  if(!current_user_can('manage_options'))return;
+  self::admin_header('Settings','Payments, shipping, integrations and data management.');
+  self::hub_links([
+   ['Payment Accounts','edit.php?post_type=erm_event&page=erm-payment-accounts','manage_options','Configure payment destinations'],
+   ['Shipping Providers','edit.php?post_type=erm_event&page=erm-shipping','manage_options','Manage carrier credentials'],
+   ['Shipping Settings','edit.php?post_type=erm_event&page=erm-shipping-settings','manage_options','Configure Shippo shipping rates'],
+   ['Shipping Labels','edit.php?post_type=erm_event&page=erm-shipping-labels','manage_options','Review and purchase shipping labels'],
+   ['Import / Export','edit.php?post_type=erm_event&page=erm-transfer','manage_options','Move form configurations']
+  ]);
+ }
+ static function help_hub_page(){
+  if(!current_user_can('edit_posts'))return;
+  self::admin_header('Help & Updates','Documentation and version history.');
+  self::hub_links([
+   ['Getting Started & Help','edit.php?post_type=erm_event&page=erm-help','edit_posts','Setup instructions and help'],
+   ['Changelog','edit.php?post_type=erm_event&page=erm-changelog','edit_posts','See what changed']
+  ]);
+ }
  static function hide_dashboard_submenu(){
   // Hide visually only. WordPress must retain the registered submenu to authorize
   // edit.php?post_type=erm_event&page=erm-dashboard during admin.php access checks.
