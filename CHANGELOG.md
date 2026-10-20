@@ -1,3 +1,12 @@
+## 1.3.45 — Payment and submission workflow safeguards
+- Submission detail opens with registrant information and payment/registration status; optional QR tickets are moved below those details and malformed ticket metadata is skipped.
+- Block manual confirmation of paid registrations/orders until full payment is recorded as verified.
+- Require recording a verified amount through the payment management form before manually setting payment status to Paid.
+- Send payment-pending instructions for cash/check and other selected methods, not an acceptance confirmation; ticket links for paid registrations are withheld until administrator confirmation.
+- Send a separate registration confirmation email after administrator approval (appointment confirmations continue through their existing flow).
+- Online processor checkout and server-verified payment webhooks are NOT implemented. External payment links cannot verify payment; do not use this version as an automatic online checkout.
+- Production PHP/runtime validation and root cause of the reported WordPress critical error are still pending; inspect WP debug log before deployment.
+
 ## 1.3.43
 - Allow registrants to select up to 10 photos or PDF files in each file-upload field instead of only one.
 - Validate every uploaded file against the existing extension, MIME-type and per-file size restrictions.
