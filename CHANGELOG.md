@@ -1,3 +1,11 @@
+## 1.3.42 — Security hardening
+- Limit viewing and changing Zoom, Teams and Discord integration credentials to WordPress administrators; editors retain normal form editing without overwriting credentials.
+- Preserve existing integration secrets when administrators leave password fields blank.
+- Prevent appointment management bearer tokens from leaking through browser referrer headers and discourage search indexing.
+- Rate-limit public appointment availability lookups and reject lookups for non-appointment forms.
+- Require POST on the form settings save handler.
+- Static source review only; live penetration testing, dependency scanning and deployment verification remain outstanding.
+
 ## 1.3.41
 - Consolidated the Super Forms WordPress sidebar into six sections: All Forms, Add New, Registrations, Appointments, Settings, and Help & Updates.
 - Removed duplicate All Forms entry and hidden redundant integration menu entries while keeping their underlying pages and existing URLs available.
