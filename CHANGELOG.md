@@ -1,3 +1,9 @@
+## 1.3.47 — Critical PHP syntax hotfix
+- Correct malformed PHP in submission detail output (previously line 868), which caused `unexpected token ">"` and a WordPress critical error.
+- Restore rendering of registration field values and payment summary.
+- Align the runtime version constant with the plugin header.
+- Requires deployment and PHP lint/runtime verification on hosting before production use.
+
 ## 1.3.46 — In-plugin payment connection instructions
 - Added expandable, provider-specific setup instructions directly to Settings > Payment Accounts for Stripe, PayPal (including eligible Venmo), Square, Zelle, Cash App, and cash/check.
 - Included official provider dashboard links, sandbox/test setup guidance, webhook requirements, and security/verification checklists.
