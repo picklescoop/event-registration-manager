@@ -1,3 +1,10 @@
+## 1.3.43
+- Allow registrants to select up to 10 photos or PDF files in each file-upload field instead of only one.
+- Validate every uploaded file against the existing extension, MIME-type and per-file size restrictions.
+- Show all uploaded attachments in the registration inbox and include them in organizer notification emails.
+- Preserve compatibility with entries containing a single attachment ID.
+- WordPress/PHP upload and request size limits still apply; live testing is pending.
+
 ## 1.3.42 — Security hardening
 - Limit viewing and changing Zoom, Teams and Discord integration credentials to WordPress administrators; editors retain normal form editing without overwriting credentials.
 - Preserve existing integration secrets when administrators leave password fields blank.
