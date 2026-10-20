@@ -1,3 +1,10 @@
+## 1.3.49 — Submission attachment gallery
+- Display uploaded images as thumbnails in the administrator's individual submission details, grouped by their form field.
+- Show uploaded PDFs and other stored attachments with View file and Download links.
+- Use existing `_erm_files` attachment metadata, preserving previously uploaded files.
+- Restrict the gallery to the existing administrator-only submission detail view.
+- PHP lint and live WordPress testing pending.
+
 ## 1.3.48 — Emergency parse-error fix
 - Remove duplicated, malformed PHP that was accidentally appended after `ERM_Plugin::init();` in the main plugin file. The stray code caused `unexpected token ".", expecting end of file` at line 927.
 - Preserve the corrected submission detail rendering from v1.3.47.
