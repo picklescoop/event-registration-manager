@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Form, Cart and Registration Creator
  * Description: Reusable event forms with configurable fields, optional payments, uploads, receipts, and registration management.
- * Version: 1.3.45
+ * Version: 1.3.46
  * Requires PHP: 7.4
  * License: GPL-2.0-or-later
  * Text Domain: event-registration-manager
@@ -86,6 +86,23 @@ final class ERM_Plugin {
  static function defaults(){return ['fields'=>self::DEFAULT_FIELDS,'intro'=>'','hero'=>'','accent'=>'#603f91','payment_mode'=>'optional','amount'=>'0','registration_levels'=>[],'fulfillment_pickup'=>1,'fulfillment_shipping'=>0,'shipping_default'=>0,'shipping_rules'=>[],'shipping_live'=>0,'methods'=>['paypal','venmo','zelle','cashapp','mail'],'paypal'=>'','venmo'=>'','zelle'=>'','cashapp'=>'','payee'=>'','mail_address'=>'','organizer_email'=>get_option('admin_email'),'receipt'=>1,'ack'=>'Thank you! Your registration has been received.','public_fields'=>[],'upload_types'=>['jpg','jpeg','png','webp','pdf'],'upload_mb'=>5,'form_type'=>'registration','calendar_url'=>'','appointment_modes'=>['studio'],'appointment_studio_address'=>'','appointment_travel_note'=>'','appointment_online_platform'=>'zoom','appointment_online_url'=>'','appointment_duration'=>30,'appointment_interval'=>30,'appointment_days'=>14,'appointment_notice'=>0,'appointment_buffer_before'=>0,'appointment_buffer_after'=>0,'appointment_blocked'=>'','appointment_extra_windows'=>'','appointment_ical_url'=>'','appointment_hours'=>['1'=>['09:00','17:00'],'2'=>['09:00','17:00'],'3'=>['09:00','17:00'],'4'=>['09:00','17:00'],'5'=>['09:00','17:00']],'admin_subject'=>'New submission: {form_title} #{entry_id}','admin_template'=>'{fields} {appointment} {items} Total: {total}','customer_subject'=>'Submission received: {form_title} (#{entry_id})','customer_template'=>'','font'=>'inherit','background'=>'#ffffff','text_color'=>'#222222','background_image'=>'','background_opacity'=>35,'label_bg'=>'#ffffff','label_bg_opacity'=>90,'label_color'=>'#222222','heading_color'=>'#222222','products'=>[],'tickets_enabled'=>0];}
  static function settings($id){$saved=get_post_meta($id,'_erm_settings',true);$settings=wp_parse_args(is_array($saved)?$saved:[],self::defaults());$global=get_option('erm_payment_accounts',false);if(is_array($global))foreach(self::payment_account_keys() as $key)$settings[$key]=$global[$key]??'';return $settings;}
  static function payment_account_keys(){return ['paypal','venmo','zelle','cashapp','payee','mail_address'];}
+ static function payment_setup_guide(){
+  $providers=[
+   ['Stripe — cards, Apple Pay and Google Pay','https://dashboard.stripe.com/','1. Create or sign in to a Stripe account and complete business verification. 2. In Developers > API keys, obtain test keys first. 3. A future Super Forms Stripe integration must create Checkout Sessions server-side and display a webhook endpoint. 4. Register that endpoint in Stripe Workbench/Webhooks, subscribe to checkout.session.completed and asynchronous payment events, and save the signing secret. 5. Test successful, failed and delayed payments before switching to live keys.','NOT CONNECTED: This version has no Stripe credential fields, checkout sessions or verified webhook handler. Do not paste Stripe secret keys into payment URL fields.'],
+   ['PayPal — PayPal checkout and eligible Venmo','https://developer.paypal.com/dashboard/','1. Sign in with a PayPal Business account. 2. Under Apps & Credentials, create a REST app and copy Sandbox Client ID and Secret. 3. A future Super Forms PayPal integration must create and capture Orders on the server and expose a webhook endpoint. 4. Register that webhook with PayPal and save its Webhook ID. 5. Verify webhook signatures and confirmed captures, then repeat with Live credentials. Venmo availability depends on merchant eligibility and checkout configuration.','NOT CONNECTED: A PayPal.me or Venmo URL is only a payment link; it cannot verify payment or automatically confirm registrations. Never enter your Client Secret in a URL field.'],
+   ['Square — card checkout','https://developer.squareup.com/apps','1. Create a Square developer application. 2. Find Sandbox access token and location ID, then create a test payment flow. 3. A future Super Forms integration must use Square hosted checkout or Payments API and provide a webhook notification URL. 4. Configure webhook subscriptions and verify signatures on the server. 5. Test payment completion, failure, refunds and Live credentials.','NOT CONNECTED: This version has no Square API integration or webhook handler. Do not enter access tokens in public payment fields.'],
+   ['Zelle — manual reconciliation','https://www.zellepay.com/','1. Confirm Zelle is supported by your bank. 2. Enter your business payment recipient details in Payment Accounts > Zelle. 3. Give the registrant their reference number and payment instructions. 4. Verify receipt directly in your bank account, then record the amount received and approve the submission.','Zelle payments are not automatically verified by this plugin. Never rely on a screenshot as proof of payment.'],
+   ['Cash App — manual reconciliation','https://cash.app/','1. Obtain your business payment link. 2. Enter the URL in Payment Accounts > Cash App. 3. Ask customers to include their registration reference. 4. Check your Cash App transaction history before manually recording payment and approving.','A Cash App link does not automatically confirm payment in this version.'],
+   ['Cash or check — offline','', '1. Enter the payee and mailing address below for checks. 2. For cash, provide instructions to arrange in-person payment. 3. The submission remains pending. 4. After receiving and verifying the full amount, open Registrations > Submissions, record payment in Payment management, and change Registration status to Confirmed.','Do not mark the submission Paid or Confirmed until funds have been verified.']
+  ];
+  echo '<section style="max-width:1000px;margin-top:24px"><h2>Payment connection setup guide</h2><p><strong>Important:</strong> These instructions explain provider setup and the integration requirements. API-based checkout is not yet implemented in this version of Super Forms. Payment links alone do not prove payment. Never enter private API credentials in the URL fields above.</p>';
+  foreach($providers as $p){
+   echo '<details style="background:#fff;border:1px solid #c3c4c7;margin:10px 0;padding:14px 18px"><summary style="cursor:pointer;font-weight:600">'.esc_html($p[0]).'</summary><p>'.esc_html($p[2]).'</p><p><strong>'.esc_html($p[3]).'</strong></p>';
+   if($p[1])echo '<p><a href="'.esc_url($p[1]).'" target="_blank" rel="noopener noreferrer">Open official provider dashboard / website ↗</a></p>';
+   echo '</details>';
+  }
+  echo '<p><strong>Security checklist:</strong> Use HTTPS; store secrets server-side with administrator-only access; verify signed webhook events; validate amount, currency, transaction status and order ID; prevent duplicate webhook processing; never mark an online payment Paid based only on a browser redirect.</p></section>';
+ }
  static function payment_accounts_page(){
   if(!current_user_can('manage_options'))wp_die('Not authorized',403);
   $values=get_option('erm_payment_accounts',false);
@@ -102,6 +119,7 @@ final class ERM_Plugin {
   }
   echo '<p><button type="submit" class="button button-primary">Save Payment Accounts</button></p></form>';
   if(get_option('erm_payment_accounts',false)===false)echo '<p><strong>Existing forms:</strong> Their previous payment instructions remain available until you save shared account details here. Copy your existing account information into this page before saving.</p>';
+  self::payment_setup_guide();
   echo '</div>';
  }
  static function save_payment_accounts(){
@@ -436,6 +454,7 @@ Manage your appointment: ".self::appointment_manage_url($entry).self::appointmen
   $new=admin_url('post-new.php?post_type=erm_event');
   $all=admin_url('edit.php?post_type=erm_event&erm_view=list');
   echo '<div class="wrap" style="max-width:1050px"><h1>Form, Cart and Registration Creator — Getting Started</h1><p>Create contact forms, appointment requests, event registrations, and ticket or product order forms without writing code.</p>';
+  echo '<p><a class="button" href="'.esc_url(admin_url('edit.php?post_type=erm_event&page=erm-payment-accounts')).'">Payment connection instructions (Stripe, PayPal, Square, Zelle, Cash App, cash/check)</a></p>';
   echo '<p><a class="button button-primary" href="'.esc_url($new).'">Create a New Form</a> <a class="button" href="'.esc_url($all).'">View My Forms</a></p>';
   $sections=[
    ['Before updating','Back up your database and wp-content/uploads. Existing form IDs and entry metadata remain unchanged. Test on staging before accepting real payments or collecting personal information.'],['1. Create your form','Choose Forms → Add New. Enter a clear title, such as “2027 Vendor Registration.” Select a Form Type: Registration, Question / Comment, Appointment Request, or Tickets / Products.'],
