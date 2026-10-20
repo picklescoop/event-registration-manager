@@ -1,3 +1,10 @@
+## 1.3.46 — In-plugin payment connection instructions
+- Added expandable, provider-specific setup instructions directly to Settings > Payment Accounts for Stripe, PayPal (including eligible Venmo), Square, Zelle, Cash App, and cash/check.
+- Included official provider dashboard links, sandbox/test setup guidance, webhook requirements, and security/verification checklists.
+- Added a direct link to the guide from Getting Started & Help.
+- Clearly identify which methods currently use manual payment links and which API integrations are not yet implemented; no API keys are requested or stored by this documentation-only update.
+- Live WordPress testing pending.
+
 ## 1.3.45 — Payment and submission workflow safeguards
 - Submission detail opens with registrant information and payment/registration status; optional QR tickets are moved below those details and malformed ticket metadata is skipped.
 - Block manual confirmation of paid registrations/orders until full payment is recorded as verified.
