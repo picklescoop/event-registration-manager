@@ -1,3 +1,10 @@
+## 1.3.51 — Payment security foundation (pre-integration)
+- Require actual recorded paid status and full amount whenever a submission has an amount due, even when the selected method is `none`; prevent an unpaid amount from bypassing confirmation checks.
+- Add administrator-only configuration readiness diagnostics for Stripe, PayPal and Square using server-side constants. No secret values are displayed or stored in payment URLs.
+- Explicitly warn that provider credentials alone do not activate checkout, webhooks, payment verification or refunds.
+- **Not a live payment release**: hosted checkout, signed webhook handlers and provider reconciliation are still outstanding and must be implemented and tested before enabling online payments.
+- PHP lint and integration tests have not been run.
+
 ## 1.3.50 — Administrator submission deletion
 - Add Delete Submission buttons to the submission inbox and individual submission detail.
 - Require administrator permission, POST request, WordPress nonce and browser confirmation.
