@@ -1,3 +1,10 @@
+## 1.3.50 — Administrator submission deletion
+- Add Delete Submission buttons to the submission inbox and individual submission detail.
+- Require administrator permission, POST request, WordPress nonce and browser confirmation.
+- Move submissions to WordPress Trash instead of permanently deleting them, and preserve uploaded Media Library attachments.
+- Show a success message after moving a submission to Trash.
+- PHP lint and live-site testing pending.
+
 ## 1.3.49 — Submission attachment gallery
 - Display uploaded images as thumbnails in the administrator's individual submission details, grouped by their form field.
 - Show uploaded PDFs and other stored attachments with View file and Download links.
