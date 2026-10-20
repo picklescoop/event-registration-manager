@@ -1,3 +1,9 @@
+## 1.3.48 — Emergency parse-error fix
+- Remove duplicated, malformed PHP that was accidentally appended after `ERM_Plugin::init();` in the main plugin file. The stray code caused `unexpected token ".", expecting end of file` at line 927.
+- Preserve the corrected submission detail rendering from v1.3.47.
+- Update both the plugin header and runtime version constant.
+- Site deployment and full PHP lint validation are still required.
+
 ## 1.3.47 — Critical PHP syntax hotfix
 - Correct malformed PHP in submission detail output (previously line 868), which caused `unexpected token ">"` and a WordPress critical error.
 - Restore rendering of registration field values and payment summary.
