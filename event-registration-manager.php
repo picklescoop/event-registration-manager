@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Form, Cart and Registration Creator
  * Description: Reusable event forms with configurable fields, optional payments, uploads, receipts, and registration management.
- * Version: 1.3.48
+ * Version: 1.3.49
  * Requires PHP: 7.4
  * License: GPL-2.0-or-later
  * Text Domain: event-registration-manager
@@ -12,7 +12,7 @@ require_once __DIR__.'/includes/google-calendar.php';
 require_once __DIR__.'/includes/shipping-providers.php';
 require_once __DIR__.'/includes/shippo.php';
 final class ERM_Plugin {
- const VERSION='1.3.48';
+ const VERSION='1.3.49';
  static $reschedule_entry=0;
  const DEFAULT_FIELDS=[['id'=>'name','label'=>'Full Name','type'=>'text','required'=>true],['id'=>'business','label'=>'Business / Organization','type'=>'text','required'=>false],['id'=>'address','label'=>'Mailing Address','type'=>'textarea','required'=>false],['id'=>'phone','label'=>'Phone Number','type'=>'tel','required'=>false],['id'=>'email','label'=>'Email Address','type'=>'email','required'=>true],['id'=>'products','label'=>'Products Sold','type'=>'textarea','required'=>false]];
  static function init(){ERM_Google_Calendar::init();ERM_Shipping_Providers::init();ERM_Shippo::init();add_action('admin_post_nopriv_erm_manage_appointment',[__CLASS__,'customer_appointment']);add_action('admin_post_erm_manage_appointment',[__CLASS__,'customer_appointment']);add_action('admin_post_erm_reschedule',[__CLASS__,'reschedule']);add_action('wp_ajax_erm_available_slots',[__CLASS__,'available_slots']);add_action('wp_ajax_nopriv_erm_available_slots',[__CLASS__,'available_slots']);add_action('init',[__CLASS__,'types']);add_action('add_meta_boxes',[__CLASS__,'metaboxes']);add_action('save_post_erm_event',[__CLASS__,'save_event']);add_shortcode('event_registration',[__CLASS__,'form']);add_shortcode('event_registrations',[__CLASS__,'public_list']);add_action('admin_post_nopriv_erm_submit',[__CLASS__,'submit']);add_action('admin_post_erm_submit',[__CLASS__,'submit']);add_action('admin_menu',[__CLASS__,'admin_menu']);add_action('admin_head',[__CLASS__,'hide_dashboard_submenu']);add_action('admin_init',[__CLASS__,'redirect_forms_home']);add_action('admin_post_erm_status',[__CLASS__,'status']);add_action('admin_post_erm_save_payment_accounts',[__CLASS__,'save_payment_accounts']);add_action('admin_post_erm_record_payment',[__CLASS__,'record_payment']);add_action('admin_post_erm_export',[__CLASS__,'export']);add_action('admin_post_erm_reply',[__CLASS__,'reply']);add_action('admin_post_erm_checkin',[__CLASS__,'checkin']);add_action('admin_post_erm_undo_checkin',[__CLASS__,'undo_checkin']);add_action('admin_post_erm_ticket',[__CLASS__,'ticket_page']);add_action('admin_post_nopriv_erm_ticket',[__CLASS__,'ticket_page']);add_action('admin_post_erm_scanner',[__CLASS__,'scanner_page']);add_action('admin_enqueue_scripts',[__CLASS__,'admin_assets']);add_action('admin_footer-edit.php',[__CLASS__,'shortcode_copy_script']);add_action('admin_footer-post.php',[__CLASS__,'appointment_builder_visibility_script']);add_action('admin_footer-post-new.php',[__CLASS__,'appointment_builder_visibility_script']);add_action('wp_enqueue_scripts',[__CLASS__,'styles']);add_filter('manage_erm_event_posts_columns',[__CLASS__,'form_list_columns']);add_action('manage_erm_event_posts_custom_column',[__CLASS__,'form_list_column'],10,2);add_filter('post_row_actions',[__CLASS__,'clone_row_action'],10,2);add_action('admin_post_erm_clone_form',[__CLASS__,'clone_form']);add_action('admin_post_erm_export_form',[__CLASS__,'export_form']);add_action('admin_post_erm_import_form',[__CLASS__,'import_form']);}
@@ -854,6 +854,37 @@ Manage your appointment: ".self::appointment_manage_url($entry).self::appointmen
   update_post_meta($entry,'_erm_payment_status',$status);
   wp_safe_redirect(add_query_arg('payment_saved','1',admin_url('edit.php?post_type=erm_event&page=erm-registrations&entry='.$entry)));exit;
  }
+ static function submission_attachments($entry,$settings){
+  $files=get_post_meta($entry,'_erm_files',true);
+  if(!is_array($files)||!$files)return;
+  $labels=[];
+  foreach((array)($settings['fields']??[]) as $field)if(is_array($field)&&isset($field['id']))$labels[$field['id']]=(string)($field['label']??$field['id']);
+  echo '<section style="margin:22px 0;padding:18px;background:#fff;border:1px solid #c3c4c7"><h3 style="margin-top:0">Attached files and pictures</h3>';
+  $count=0;
+  foreach($files as $key=>$ids){
+   if(!is_array($ids))$ids=[$ids];
+   $cards='';
+   foreach($ids as $id){
+    $id=absint($id);
+    if(!$id||get_post_type($id)!=='attachment')continue;
+    $url=wp_get_attachment_url($id);
+    if(!$url)continue;
+    $name=get_the_title($id);
+    if(!$name)$name=basename((string)get_attached_file($id));
+    $mime=(string)get_post_mime_type($id);
+    $cards.='<div style="width:160px;max-width:100%;padding:10px;border:1px solid #dcdcde;background:#fafafa;overflow-wrap:anywhere">';
+    if(strpos($mime,'image/')===0){
+     $thumb=wp_get_attachment_image($id,'thumbnail',false,['style'=>'display:block;width:140px;height:110px;object-fit:contain;margin-bottom:8px','alt'=>$name]);
+     if($thumb)$cards.='<a href="'.esc_url($url).'" target="_blank" rel="noopener noreferrer">'.$thumb.'</a>';
+    }else $cards.='<div style="padding:20px 0;text-align:center"><span class="dashicons dashicons-media-document" style="font-size:36px;width:36px;height:36px"></span></div>';
+    $cards.='<div><strong>'.esc_html($name).'</strong></div><p><a href="'.esc_url($url).'" target="_blank" rel="noopener noreferrer">View file</a> · <a href="'.esc_url($url).'" download>Download</a></p></div>';
+    $count++;
+   }
+   if($cards!=='')echo '<h4>'.esc_html($labels[$key]??$key).'</h4><div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px">'.$cards.'</div>';
+  }
+  if(!$count)echo '<p>No accessible attachments found for this submission.</p>';
+  echo '</section>';
+ }
  static function entry_detail($entry){
   if(!current_user_can('manage_options')||get_post_type($entry)!=='erm_entry')return;
   self::meeting_warning($entry);
@@ -867,6 +898,7 @@ Manage your appointment: ".self::appointment_manage_url($entry).self::appointmen
   $received=(float)get_post_meta($entry,'_erm_amount_received',true);
   echo '<div class="notice notice-info inline" style="padding:12px 18px"><p><strong>Registration:</strong> '.esc_html(ucfirst($registration_status?:'submitted')).' &nbsp; <strong>Payment:</strong> '.esc_html(ucfirst($payment_status?:'pending')).' &nbsp; <strong>Total:</strong> $'.esc_html(number_format($due,2)).' &nbsp; <strong>Received:</strong> $'.esc_html(number_format($received,2)).'</p></div>';
   foreach($settings['fields'] as $f){$v=$data[$f['id']]??'';echo '<p><strong>'.esc_html($f['label']).':</strong> '.esc_html(is_array($v)?implode(', ',$v):$v).'</p>';}
+  self::submission_attachments($entry,$settings);
   echo '<p><strong>Appointment:</strong> '.esc_html(get_post_meta($entry,'_erm_appointment',true)).'</p>';if($settings['form_type']==='appointment'){echo '<h3>Appointment management</h3><p>Confirm or cancel using the Registration status control in the inbox. Rescheduling below validates the new time against your availability settings.</p><form method="post" action="'.esc_url(admin_url('admin-post.php')).'"><input type="hidden" name="action" value="erm_reschedule"><input type="hidden" name="entry" value="'.absint($entry).'">';wp_nonce_field('erm_reschedule_'.$entry);echo '<label>New date <input type="date" name="date" required></label> <label>New start time <input type="time" name="time" required></label> <button class="button button-primary">Reschedule and notify</button></form>';if(isset($_GET['appointment_result']))echo '<p class="notice notice-info">Appointment saved. '.($_GET['appointment_result']==='sent'?'Notification email sent.':'Email delivery was not confirmed.').'</p>';echo '<h4>Appointment history</h4>';$hist=(array)get_post_meta($entry,'_erm_appointment_history',true);if(!$hist)echo '<p>No appointment changes yet.</p>';foreach(array_reverse($hist) as $h)echo '<p>'.esc_html(($h['date']??'').' — '.($h['action']??'').' — '.($h['old']??'').' → '.($h['new']??'')).'</p>';}
   echo '<div class="fcrc-payment-panel"><h3>Payment management</h3><p>Record the amount you have verified, the external payment reference, and any notes. This does not charge the customer or verify an external transaction.</p>';
   if(isset($_GET['payment_saved']))echo '<div class="notice notice-success"><p>Payment record saved.</p></div>';
