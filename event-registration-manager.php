@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Form, Cart and Registration Creator
  * Description: Reusable event forms with configurable fields, optional payments, uploads, receipts, and registration management.
- * Version: 1.3.50
+ * Version: 1.3.51
  * Requires PHP: 7.4
  * License: GPL-2.0-or-later
  * Text Domain: event-registration-manager
@@ -12,7 +12,7 @@ require_once __DIR__.'/includes/google-calendar.php';
 require_once __DIR__.'/includes/shipping-providers.php';
 require_once __DIR__.'/includes/shippo.php';
 final class ERM_Plugin {
- const VERSION='1.3.50';
+ const VERSION='1.3.51';
  static $reschedule_entry=0;
  const DEFAULT_FIELDS=[['id'=>'name','label'=>'Full Name','type'=>'text','required'=>true],['id'=>'business','label'=>'Business / Organization','type'=>'text','required'=>false],['id'=>'address','label'=>'Mailing Address','type'=>'textarea','required'=>false],['id'=>'phone','label'=>'Phone Number','type'=>'tel','required'=>false],['id'=>'email','label'=>'Email Address','type'=>'email','required'=>true],['id'=>'products','label'=>'Products Sold','type'=>'textarea','required'=>false]];
  static function init(){ERM_Google_Calendar::init();ERM_Shipping_Providers::init();ERM_Shippo::init();add_action('admin_post_nopriv_erm_manage_appointment',[__CLASS__,'customer_appointment']);add_action('admin_post_erm_manage_appointment',[__CLASS__,'customer_appointment']);add_action('admin_post_erm_reschedule',[__CLASS__,'reschedule']);add_action('wp_ajax_erm_available_slots',[__CLASS__,'available_slots']);add_action('wp_ajax_nopriv_erm_available_slots',[__CLASS__,'available_slots']);add_action('init',[__CLASS__,'types']);add_action('add_meta_boxes',[__CLASS__,'metaboxes']);add_action('save_post_erm_event',[__CLASS__,'save_event']);add_shortcode('event_registration',[__CLASS__,'form']);add_shortcode('event_registrations',[__CLASS__,'public_list']);add_action('admin_post_nopriv_erm_submit',[__CLASS__,'submit']);add_action('admin_post_erm_submit',[__CLASS__,'submit']);add_action('admin_menu',[__CLASS__,'admin_menu']);add_action('admin_head',[__CLASS__,'hide_dashboard_submenu']);add_action('admin_init',[__CLASS__,'redirect_forms_home']);add_action('admin_post_erm_status',[__CLASS__,'status']);add_action('admin_post_erm_delete_submission',[__CLASS__,'delete_submission']);add_action('admin_post_erm_save_payment_accounts',[__CLASS__,'save_payment_accounts']);add_action('admin_post_erm_record_payment',[__CLASS__,'record_payment']);add_action('admin_post_erm_export',[__CLASS__,'export']);add_action('admin_post_erm_reply',[__CLASS__,'reply']);add_action('admin_post_erm_checkin',[__CLASS__,'checkin']);add_action('admin_post_erm_undo_checkin',[__CLASS__,'undo_checkin']);add_action('admin_post_erm_ticket',[__CLASS__,'ticket_page']);add_action('admin_post_nopriv_erm_ticket',[__CLASS__,'ticket_page']);add_action('admin_post_erm_scanner',[__CLASS__,'scanner_page']);add_action('admin_enqueue_scripts',[__CLASS__,'admin_assets']);add_action('admin_footer-edit.php',[__CLASS__,'shortcode_copy_script']);add_action('admin_footer-post.php',[__CLASS__,'appointment_builder_visibility_script']);add_action('admin_footer-post-new.php',[__CLASS__,'appointment_builder_visibility_script']);add_action('wp_enqueue_scripts',[__CLASS__,'styles']);add_filter('manage_erm_event_posts_columns',[__CLASS__,'form_list_columns']);add_action('manage_erm_event_posts_custom_column',[__CLASS__,'form_list_column'],10,2);add_filter('post_row_actions',[__CLASS__,'clone_row_action'],10,2);add_action('admin_post_erm_clone_form',[__CLASS__,'clone_form']);add_action('admin_post_erm_export_form',[__CLASS__,'export_form']);add_action('admin_post_erm_import_form',[__CLASS__,'import_form']);}
@@ -119,6 +119,20 @@ final class ERM_Plugin {
   }
   echo '<p><button type="submit" class="button button-primary">Save Payment Accounts</button></p></form>';
   if(get_option('erm_payment_accounts',false)===false)echo '<p><strong>Existing forms:</strong> Their previous payment instructions remain available until you save shared account details here. Copy your existing account information into this page before saving.</p>';
+  echo '<section style="max-width:850px;margin:22px 0;padding:18px;background:#fff;border:1px solid #c3c4c7"><h2>Secure online payment integration — preparation</h2>';
+  echo '<p><strong>Important:</strong> Stripe, PayPal and Square are not yet connected to checkout or verified payment webhooks. Do not accept card payments through this plugin until the integration passes sandbox testing.</p>';
+  echo '<p>For production, define credentials in <code>wp-config.php</code> or your hosting secret manager, not in form fields or payment links. Do not share secrets by email or chat.</p>';
+  $checks=[
+   'Stripe'=>['ERM_STRIPE_SECRET_KEY','ERM_STRIPE_WEBHOOK_SECRET'],
+   'PayPal'=>['ERM_PAYPAL_CLIENT_ID','ERM_PAYPAL_CLIENT_SECRET','ERM_PAYPAL_WEBHOOK_ID'],
+   'Square'=>['ERM_SQUARE_ACCESS_TOKEN','ERM_SQUARE_LOCATION_ID','ERM_SQUARE_WEBHOOK_SIGNATURE_KEY']
+  ];
+  echo '<table class="widefat striped"><thead><tr><th>Provider</th><th>Required server configuration</th><th>Readiness</th></tr></thead><tbody>';
+  foreach($checks as $provider=>$constants){
+   $present=0;foreach($constants as $key)if(defined($key)&&is_string(constant($key))&&constant($key)!=='')$present++;
+   echo '<tr><td>'.esc_html($provider).'</td><td><code>'.esc_html(implode('</code>, <code>',$constants)).'</code></td><td>'.($present===count($constants)?'Credentials present — checkout not enabled':'Not configured ('.$present.'/'.count($constants).')').'</td></tr>';
+  }
+  echo '</tbody></table><p>Credential presence is not a connection test. Actual hosted checkout, signature validation, refunds, and automatic payment status updates require a separate tested integration.</p></section>';
   self::payment_setup_guide();
   echo '</div>';
  }
@@ -967,7 +981,7 @@ Manage your appointment: ".self::appointment_manage_url($entry).self::appointmen
  static function entry_payment_verified($id){
   $method=(string)get_post_meta($id,'_erm_method',true);
   $due=(float)get_post_meta($id,'_erm_amount',true);
-  if($method==='none'||$due<=0)return true;
+  if($due<=0)return true;
   return get_post_meta($id,'_erm_payment_status',true)==='paid'&&(float)get_post_meta($id,'_erm_amount_received',true)+0.001 >= $due;
  }
  static function status_form($id,$kind,$choices){$current=get_post_meta($id,'_erm_'.$kind.'_status',true);echo '<form action="'.esc_url(admin_url('admin-post.php')).'" method="post"><input type="hidden" name="action" value="erm_status"><input type="hidden" name="entry" value="'.$id.'"><input type="hidden" name="kind" value="'.esc_attr($kind).'">'.wp_nonce_field('erm_status_'.$id,'erm_nonce',true,false).'<select name="value">';foreach($choices as $c)echo '<option value="'.esc_attr($c).'" '.selected($c,$current,false).'>'.esc_html(ucwords(str_replace('_',' ',$c))).'</option>';echo '</select> <button class="button">Save</button></form>';}
