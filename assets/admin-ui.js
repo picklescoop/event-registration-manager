@@ -44,7 +44,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   'Form Fields':{label:'Visual Fields',icon:'▦'},
   'Appointment Scheduling':{label:'Scheduling',icon:'◷',types:['appointment']},
   'Products, Tickets & Service Levels':{label:'Products & Services',icon:'▣',types:['shop']},
-  'Appearance & Notifications':{label:'Appearance & Emails',icon:'◈'},
+  'Appearance & Notifications':{label:'Appearance',icon:'◈'},
+  'Email Notifications':{label:'Email Designer',icon:'✉'},
   'Payment':{label:'Payments',icon:'＄',types:['registration','shop','appointment']},
   'QR Tickets':{label:'QR Tickets',icon:'▦',types:['shop','registration']},
   'Uploads':{label:'Uploads & Privacy',icon:'▧'}
