@@ -1,3 +1,10 @@
+## 1.3.59 — Appointment experience refresh
+- Redesign customer Manage Appointment page with responsive header, current appointment/status summary, reschedule card and separate cancellation area.
+- Improve the public appointment scheduler with styled meeting-type choices and date/time section.
+- Fix the availability JavaScript to recognize the Manage Appointment page's reschedule date/time fields.
+- Preserve existing appointment actions, security tokens, and approval flow.
+- Live PHP lint and browser testing remain pending.
+
 ## 1.3.58 — Appointment submission fatal error fix
 - Replace the undefined `wp_checkdate()` call in the appointment request submission handler with PHP's built-in `checkdate()` function.
 - This fixes a fatal error path when validating the requested appointment date.
