@@ -1,3 +1,8 @@
+## 1.3.58 — Appointment submission fatal error fix
+- Replace the undefined `wp_checkdate()` call in the appointment request submission handler with PHP's built-in `checkdate()` function.
+- This fixes a fatal error path when validating the requested appointment date.
+- Server error-log confirmation, PHP lint and end-to-end appointment submission testing are still pending.
+
 ## 1.3.57 — Only offer configured online meeting platforms
 - Add a meeting URL field for each allowed online platform in Settings → Appointment Integrations.
 - Only display platforms with a saved valid HTTPS meeting link and an enabled checkbox.
