@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Form, Cart and Registration Creator
  * Description: Reusable event forms with configurable fields, optional payments, uploads, receipts, and registration management.
- * Version: 1.3.54
+ * Version: 1.3.55
  * Requires PHP: 7.4
  * License: GPL-2.0-or-later
  * Text Domain: event-registration-manager
@@ -12,10 +12,10 @@ require_once __DIR__.'/includes/google-calendar.php';
 require_once __DIR__.'/includes/shipping-providers.php';
 require_once __DIR__.'/includes/shippo.php';
 final class ERM_Plugin {
- const VERSION='1.3.54';
+ const VERSION='1.3.55';
  static $reschedule_entry=0;
  const DEFAULT_FIELDS=[['id'=>'name','label'=>'Full Name','type'=>'text','required'=>true],['id'=>'business','label'=>'Business / Organization','type'=>'text','required'=>false],['id'=>'address','label'=>'Mailing Address','type'=>'textarea','required'=>false],['id'=>'phone','label'=>'Phone Number','type'=>'tel','required'=>false],['id'=>'email','label'=>'Email Address','type'=>'email','required'=>true],['id'=>'products','label'=>'Products Sold','type'=>'textarea','required'=>false]];
- static function init(){ERM_Google_Calendar::init();ERM_Shipping_Providers::init();ERM_Shippo::init();add_action('admin_post_nopriv_erm_manage_appointment',[__CLASS__,'customer_appointment']);add_action('admin_post_erm_manage_appointment',[__CLASS__,'customer_appointment']);add_action('admin_post_erm_reschedule',[__CLASS__,'reschedule']);add_action('wp_ajax_erm_available_slots',[__CLASS__,'available_slots']);add_action('wp_ajax_nopriv_erm_available_slots',[__CLASS__,'available_slots']);add_action('init',[__CLASS__,'types']);add_action('add_meta_boxes',[__CLASS__,'metaboxes']);add_action('save_post_erm_event',[__CLASS__,'save_event']);add_shortcode('event_registration',[__CLASS__,'form']);add_shortcode('event_registrations',[__CLASS__,'public_list']);add_action('admin_post_nopriv_erm_submit',[__CLASS__,'submit']);add_action('admin_post_erm_submit',[__CLASS__,'submit']);add_action('admin_menu',[__CLASS__,'admin_menu']);add_action('admin_head',[__CLASS__,'hide_dashboard_submenu']);add_action('admin_init',[__CLASS__,'redirect_forms_home']);add_action('admin_post_erm_status',[__CLASS__,'status']);add_action('admin_post_erm_delete_submission',[__CLASS__,'delete_submission']);add_action('admin_post_erm_save_payment_accounts',[__CLASS__,'save_payment_accounts']);add_action('admin_post_erm_record_payment',[__CLASS__,'record_payment']);add_action('admin_post_erm_export',[__CLASS__,'export']);add_action('admin_post_erm_reply',[__CLASS__,'reply']);add_action('admin_post_erm_checkin',[__CLASS__,'checkin']);add_action('admin_post_erm_undo_checkin',[__CLASS__,'undo_checkin']);add_action('admin_post_erm_ticket',[__CLASS__,'ticket_page']);add_action('admin_post_nopriv_erm_ticket',[__CLASS__,'ticket_page']);add_action('admin_post_erm_scanner',[__CLASS__,'scanner_page']);add_action('admin_enqueue_scripts',[__CLASS__,'admin_assets']);add_action('admin_footer-edit.php',[__CLASS__,'shortcode_copy_script']);add_action('admin_footer-post.php',[__CLASS__,'appointment_builder_visibility_script']);add_action('admin_footer-post-new.php',[__CLASS__,'appointment_builder_visibility_script']);add_action('wp_enqueue_scripts',[__CLASS__,'styles']);add_filter('manage_erm_event_posts_columns',[__CLASS__,'form_list_columns']);add_action('manage_erm_event_posts_custom_column',[__CLASS__,'form_list_column'],10,2);add_filter('post_row_actions',[__CLASS__,'clone_row_action'],10,2);add_action('admin_post_erm_clone_form',[__CLASS__,'clone_form']);add_action('admin_post_erm_export_form',[__CLASS__,'export_form']);add_action('admin_post_erm_import_form',[__CLASS__,'import_form']);}
+ static function init(){ERM_Google_Calendar::init();ERM_Shipping_Providers::init();ERM_Shippo::init();add_action('admin_post_nopriv_erm_manage_appointment',[__CLASS__,'customer_appointment']);add_action('admin_post_erm_manage_appointment',[__CLASS__,'customer_appointment']);add_action('admin_post_erm_reschedule',[__CLASS__,'reschedule']);add_action('wp_ajax_erm_available_slots',[__CLASS__,'available_slots']);add_action('wp_ajax_nopriv_erm_available_slots',[__CLASS__,'available_slots']);add_action('init',[__CLASS__,'types']);add_action('add_meta_boxes',[__CLASS__,'metaboxes']);add_action('save_post_erm_event',[__CLASS__,'save_event']);add_shortcode('event_registration',[__CLASS__,'form']);add_shortcode('event_registrations',[__CLASS__,'public_list']);add_action('admin_post_nopriv_erm_submit',[__CLASS__,'submit']);add_action('admin_post_erm_submit',[__CLASS__,'submit']);add_action('admin_menu',[__CLASS__,'admin_menu']);add_action('admin_head',[__CLASS__,'hide_dashboard_submenu']);add_action('admin_init',[__CLASS__,'redirect_forms_home']);add_action('admin_post_erm_status',[__CLASS__,'status']);add_action('admin_post_erm_delete_submission',[__CLASS__,'delete_submission']);add_action('admin_post_erm_save_payment_accounts',[__CLASS__,'save_payment_accounts']);add_action('admin_post_erm_save_appointment_integrations',[__CLASS__,'save_appointment_integrations']);add_action('admin_post_erm_record_payment',[__CLASS__,'record_payment']);add_action('admin_post_erm_export',[__CLASS__,'export']);add_action('admin_post_erm_reply',[__CLASS__,'reply']);add_action('admin_post_erm_checkin',[__CLASS__,'checkin']);add_action('admin_post_erm_undo_checkin',[__CLASS__,'undo_checkin']);add_action('admin_post_erm_ticket',[__CLASS__,'ticket_page']);add_action('admin_post_nopriv_erm_ticket',[__CLASS__,'ticket_page']);add_action('admin_post_erm_scanner',[__CLASS__,'scanner_page']);add_action('admin_enqueue_scripts',[__CLASS__,'admin_assets']);add_action('admin_footer-edit.php',[__CLASS__,'shortcode_copy_script']);add_action('admin_footer-post.php',[__CLASS__,'appointment_builder_visibility_script']);add_action('admin_footer-post-new.php',[__CLASS__,'appointment_builder_visibility_script']);add_action('wp_enqueue_scripts',[__CLASS__,'styles']);add_filter('manage_erm_event_posts_columns',[__CLASS__,'form_list_columns']);add_action('manage_erm_event_posts_custom_column',[__CLASS__,'form_list_column'],10,2);add_filter('post_row_actions',[__CLASS__,'clone_row_action'],10,2);add_action('admin_post_erm_clone_form',[__CLASS__,'clone_form']);add_action('admin_post_erm_export_form',[__CLASS__,'export_form']);add_action('admin_post_erm_import_form',[__CLASS__,'import_form']);}
  static function types(){register_post_type('erm_event',['label'=>'Super Forms','labels'=>['name'=>'Super Forms','singular_name'=>'Form','menu_name'=>'Super Forms','all_items'=>'All Forms','add_new_item'=>'Add Form'],'public'=>false,'show_ui'=>true,'show_in_menu'=>true,'menu_icon'=>'dashicons-forms','supports'=>['title']]);register_post_type('erm_entry',['label'=>'Registrations','public'=>false,'show_ui'=>false,'supports'=>['title']]);}
  static function clone_row_action($actions,$post){
   if($post->post_type!=='erm_event'||!current_user_can('edit_post',$post->ID)||!current_user_can('edit_posts'))return $actions;
@@ -102,6 +102,38 @@ final class ERM_Plugin {
    echo '</details>';
   }
   echo '<p><strong>Security checklist:</strong> Use HTTPS; store secrets server-side with administrator-only access; verify signed webhook events; validate amount, currency, transaction status and order ID; prevent duplicate webhook processing; never mark an online payment Paid based only on a browser redirect.</p></section>';
+ }
+ static function appointment_integrations_page(){
+  if(!current_user_can('manage_options'))wp_die('Forbidden',403);
+  $o=(array)get_option('erm_appointment_integrations',[]);
+  $formats=['zoom'=>'Zoom','teams'=>'Microsoft Teams','discord'=>'Discord','slack'=>'Slack','freeconferencecall'=>'FreeConferenceCall.com','other'=>'Other'];
+  $enabled=(array)($o['formats']??['zoom']);
+  echo '<div class="wrap"><h1>Appointment integrations</h1><p>Choose the online meeting services you offer and the Google calendars that block appointment availability. In-person visits do not require an online meeting.</p>';
+  if(isset($_GET['saved']))echo '<div class="notice notice-success"><p>Appointment integration settings saved.</p></div>';
+  echo '<form method="post" action="'.esc_url(admin_url('admin-post.php')).'"><input type="hidden" name="action" value="erm_save_appointment_integrations">';
+  wp_nonce_field('erm_save_appointment_integrations');
+  echo '<h2>Allowed online meeting services</h2>';
+  foreach($formats as $key=>$label)echo '<p><label><input type="checkbox" name="formats[]" value="'.esc_attr($key).'" '.checked(in_array($key,$enabled,true),true,false).'> '.esc_html($label).'</label></p>';
+  echo '<h2>Google Calendar availability</h2><p>Enter one Google Calendar ID per line. All selected calendars are checked together for busy periods using the existing Google OAuth connection. A time is unavailable if any selected calendar is busy.</p>';
+  echo '<textarea name="calendar_ids" rows="6" class="large-text code" placeholder="primary&#10;example@group.calendar.google.com">'.esc_textarea(implode("\n",(array)($o['calendar_ids']??[]))).'</textarea>';
+  echo '<p>These IDs must be accessible to the connected Google account. If left blank, each form uses its existing configured calendar or primary calendar.</p>';
+  echo '<p><a href="'.esc_url(admin_url('edit.php?post_type=erm_event&page=erm-google-calendar')).'">Connect or manage Google Calendar OAuth</a></p>';
+  echo '<p><button class="button button-primary">Save appointment integrations</button></p></form></div>';
+ }
+ static function save_appointment_integrations(){
+  if(!current_user_can('manage_options'))wp_die('Forbidden',403);
+  check_admin_referer('erm_save_appointment_integrations');
+  $allowed=['zoom','teams','discord','slack','freeconferencecall','other'];
+  $raw=isset($_POST['formats'])&&is_array($_POST['formats'])?wp_unslash($_POST['formats']):[];
+  $formats=array_values(array_intersect($allowed,array_map('sanitize_key',$raw)));
+  $lines=preg_split('/\\r?\\n/',(string)wp_unslash($_POST['calendar_ids']??''));
+  $ids=[];
+  foreach($lines as $line){
+   $id=trim(sanitize_text_field($line));
+   if($id!==''&&strlen($id)<=250&&preg_match('/^[a-zA-Z0-9@._#-]+$/',$id))$ids[]=$id;
+  }
+  update_option('erm_appointment_integrations',['formats'=>$formats,'calendar_ids'=>array_slice(array_values(array_unique($ids)),0,30)],false);
+  wp_safe_redirect(add_query_arg('saved','1',admin_url('edit.php?post_type=erm_event&page=erm-appointment-integrations')));exit;
  }
  static function payment_accounts_page(){
   if(!current_user_can('manage_options'))wp_die('Not authorized',403);
@@ -529,7 +561,7 @@ Manage your appointment: ".self::appointment_manage_url($entry).self::appointmen
   add_submenu_page($parent,'Shipping Providers','Shipping Providers','manage_options','erm-shipping',['ERM_Shipping_Providers','settings_page']);
   add_submenu_page($parent,'Payment Review','Payment Review','manage_options','erm-payment-review',[__CLASS__,'payment_review_page']);
   add_submenu_page($parent,'Appointment Calendar','Appointment Calendar','manage_options','erm-appointment-calendar',[__CLASS__,'appointment_calendar_page']);
-  add_submenu_page($parent,'Payment Accounts','Payment Accounts','manage_options','erm-payment-accounts',[__CLASS__,'payment_accounts_page']);
+  add_submenu_page($parent,'Payment Accounts','Payment Accounts','manage_options','erm-payment-accounts',[__CLASS__,'payment_accounts_page']);add_submenu_page($parent,'Appointment Integrations','Appointment Integrations','manage_options','erm-appointment-integrations',[__CLASS__,'appointment_integrations_page']);
   add_submenu_page($parent,'Import / Export','Import / Export','manage_options','erm-transfer',[__CLASS__,'transfer_page']);
   add_submenu_page($parent,'Changelog','Changelog','edit_posts','erm-changelog',[__CLASS__,'changelog_page']);
   add_submenu_page($parent,'Event Check-In','Event Check-In','manage_options','erm-scanner',[__CLASS__,'scanner_page']);
@@ -576,6 +608,7 @@ Manage your appointment: ".self::appointment_manage_url($entry).self::appointmen
   self::admin_header('Settings','Payments, shipping, integrations and data management.');
   self::hub_links([
    ['Payment Accounts','edit.php?post_type=erm_event&page=erm-payment-accounts','manage_options','Configure payment destinations'],
+   ['Appointment Integrations','edit.php?post_type=erm_event&page=erm-appointment-integrations','manage_options','Choose online meeting services and Google calendars'],
    ['Shipping Providers','edit.php?post_type=erm_event&page=erm-shipping','manage_options','Manage carrier credentials'],
    ['Shipping Settings','edit.php?post_type=erm_event&page=erm-shipping-settings','manage_options','Configure Shippo shipping rates'],
    ['Shipping Labels','edit.php?post_type=erm_event&page=erm-shipping-labels','manage_options','Review and purchase shipping labels'],
