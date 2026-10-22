@@ -1,3 +1,10 @@
+## 1.3.54 — Appointment Request scheduler administration page
+- Fix root cause: builder navigation hid the Form Type section containing the appointment settings.
+- Move the existing appointment settings DOM into a dedicated Appointment Scheduling administration page, preserving the original input elements and saved values.
+- Display Scheduling navigation only for Appointment Request forms; keep it hidden for other form types.
+- Keep form administration navigation at the first page when switching types instead of unexpectedly jumping ahead.
+- PHP syntax unchanged apart from version identifiers; live browser verification pending.
+
 ## 1.3.53 — Emergency PHP syntax fix
 - Fix unescaped single quotes introduced in the inline appointment form-type change handler in v1.3.52. These broke the surrounding single-quoted PHP echo string and caused a critical error.
 - Preserve appointment-only scheduler visibility behavior.
