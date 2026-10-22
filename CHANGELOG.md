@@ -1,3 +1,10 @@
+## 1.3.57 — Only offer configured online meeting platforms
+- Add a meeting URL field for each allowed online platform in Settings → Appointment Integrations.
+- Only display platforms with a saved valid HTTPS meeting link and an enabled checkbox.
+- Hide the online appointment type entirely if no platform is configured.
+- Validate the selected platform server-side, save it on the appointment entry, and include its URL in the confirmation email only after approval.
+- No automatic meeting creation is implied by supplying a reusable URL. PHP lint and browser testing remain pending.
+
 ## 1.3.56 — Appointment request privacy and calendar display settings
 - Stop including an online meeting URL in the initial appointment request notification; joining details are reserved for approval/confirmation.
 - Add an optional combined Google Calendar embed URL under Settings → Appointment Integrations, supporting the Google Calendar embed view of multiple calendars.
