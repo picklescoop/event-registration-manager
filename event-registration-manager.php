@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Form, Cart and Registration Creator
  * Description: Reusable event forms with configurable fields, optional payments, uploads, receipts, and registration management.
- * Version: 1.3.59
+ * Version: 1.3.60
  * Requires PHP: 7.4
  * License: GPL-2.0-or-later
  * Text Domain: event-registration-manager
@@ -12,7 +12,7 @@ require_once __DIR__.'/includes/google-calendar.php';
 require_once __DIR__.'/includes/shipping-providers.php';
 require_once __DIR__.'/includes/shippo.php';
 final class ERM_Plugin {
- const VERSION='1.3.59';
+ const VERSION='1.3.60';
  static $reschedule_entry=0;
  const DEFAULT_FIELDS=[['id'=>'name','label'=>'Full Name','type'=>'text','required'=>true],['id'=>'business','label'=>'Business / Organization','type'=>'text','required'=>false],['id'=>'address','label'=>'Mailing Address','type'=>'textarea','required'=>false],['id'=>'phone','label'=>'Phone Number','type'=>'tel','required'=>false],['id'=>'email','label'=>'Email Address','type'=>'email','required'=>true],['id'=>'products','label'=>'Products Sold','type'=>'textarea','required'=>false]];
  static function init(){ERM_Google_Calendar::init();ERM_Shipping_Providers::init();ERM_Shippo::init();add_action('admin_post_nopriv_erm_manage_appointment',[__CLASS__,'customer_appointment']);add_action('admin_post_erm_manage_appointment',[__CLASS__,'customer_appointment']);add_action('admin_post_erm_reschedule',[__CLASS__,'reschedule']);add_action('wp_ajax_erm_available_slots',[__CLASS__,'available_slots']);add_action('wp_ajax_nopriv_erm_available_slots',[__CLASS__,'available_slots']);add_action('init',[__CLASS__,'types']);add_action('add_meta_boxes',[__CLASS__,'metaboxes']);add_action('save_post_erm_event',[__CLASS__,'save_event']);add_shortcode('event_registration',[__CLASS__,'form']);add_shortcode('event_registrations',[__CLASS__,'public_list']);add_action('admin_post_nopriv_erm_submit',[__CLASS__,'submit']);add_action('admin_post_erm_submit',[__CLASS__,'submit']);add_action('admin_menu',[__CLASS__,'admin_menu']);add_action('admin_head',[__CLASS__,'hide_dashboard_submenu']);add_action('admin_init',[__CLASS__,'redirect_forms_home']);add_action('admin_post_erm_status',[__CLASS__,'status']);add_action('admin_post_erm_delete_submission',[__CLASS__,'delete_submission']);add_action('admin_post_erm_save_payment_accounts',[__CLASS__,'save_payment_accounts']);add_action('admin_post_erm_save_appointment_integrations',[__CLASS__,'save_appointment_integrations']);add_action('admin_post_erm_record_payment',[__CLASS__,'record_payment']);add_action('admin_post_erm_export',[__CLASS__,'export']);add_action('admin_post_erm_reply',[__CLASS__,'reply']);add_action('admin_post_erm_checkin',[__CLASS__,'checkin']);add_action('admin_post_erm_undo_checkin',[__CLASS__,'undo_checkin']);add_action('admin_post_erm_ticket',[__CLASS__,'ticket_page']);add_action('admin_post_nopriv_erm_ticket',[__CLASS__,'ticket_page']);add_action('admin_post_erm_scanner',[__CLASS__,'scanner_page']);add_action('admin_enqueue_scripts',[__CLASS__,'admin_assets']);add_action('admin_footer-edit.php',[__CLASS__,'shortcode_copy_script']);add_action('admin_footer-post.php',[__CLASS__,'appointment_builder_visibility_script']);add_action('admin_footer-post-new.php',[__CLASS__,'appointment_builder_visibility_script']);add_action('wp_enqueue_scripts',[__CLASS__,'styles']);add_filter('manage_erm_event_posts_columns',[__CLASS__,'form_list_columns']);add_action('manage_erm_event_posts_custom_column',[__CLASS__,'form_list_column'],10,2);add_filter('post_row_actions',[__CLASS__,'clone_row_action'],10,2);add_action('admin_post_erm_clone_form',[__CLASS__,'clone_form']);add_action('admin_post_erm_export_form',[__CLASS__,'export_form']);add_action('admin_post_erm_import_form',[__CLASS__,'import_form']);}
@@ -760,6 +760,29 @@ Manage your appointment: ".self::appointment_manage_url($entry).self::appointmen
   $dateDisplay=$dateText;
   try{$dateDisplay=(new DateTimeImmutable($dateText,wp_timezone()))->format('l, F j, Y \\a\\t g:i A');}catch(Exception $e){}
   echo '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Manage appointment</title><link rel="stylesheet" href="'.esc_url(plugins_url('assets/appointment-design.css',__FILE__)).'?ver='.esc_attr(self::VERSION).'"></head><body class="erm-manage-page"><main class="erm-manage-shell"><header class="erm-manage-hero"><div class="erm-manage-eyebrow">Appointment center</div><h1>Manage your appointment</h1><p>'.esc_html(get_the_title($event)).'</p></header><div class="erm-manage-content"><div class="erm-manage-summary"><div><small>Requested appointment</small><strong>'.esc_html($dateDisplay).'</strong></div><div><small>Current status</small><strong class="erm-manage-status">'.esc_html($status).'</strong></div></div>';
+  // Display only the fields belonging to this appointment's original form.
+  $submitted=(array)get_post_meta($entry,'_erm_data',true);
+  $mode=(string)get_post_meta($entry,'_erm_appointment_mode',true);
+  $mode_labels=['studio'=>'In person — onsite','travel'=>'In person — at your location','online'=>'Online meeting'];
+  echo '<section class="erm-manage-card erm-manage-details"><div class="erm-manage-section-heading"><div><span class="erm-manage-kicker">Your request</span><h2>Appointment details</h2></div><span class="erm-manage-reference">Reference #'.absint($entry).'</span></div><div class="erm-manage-details-grid">';
+  if($mode!=='')echo '<div class="erm-manage-detail"><small>Meeting type</small><strong>'.esc_html($mode_labels[$mode]??ucfirst($mode)).'</strong></div>';
+  $duration=(int)get_post_meta($entry,'_erm_appointment_duration',true);
+  if($duration>0)echo '<div class="erm-manage-detail"><small>Duration</small><strong>'.esc_html($duration).' minutes</strong></div>';
+  if($mode==='studio'&&!empty($s['appointment_studio_address']))echo '<div class="erm-manage-detail"><small>Location</small><strong>'.esc_html($s['appointment_studio_address']).'</strong></div>';
+  if($mode==='travel'){$address=(array)get_post_meta($entry,'_erm_appointment_address',true);$address=array_filter(array_map('sanitize_text_field',$address));if($address)echo '<div class="erm-manage-detail"><small>Visit address</small><strong>'.esc_html(implode(', ',$address)).'</strong></div>';}
+  if($mode==='online'){$platform=(string)get_post_meta($entry,'_erm_online_service',true);if($platform!=='')echo '<div class="erm-manage-detail"><small>Meeting platform</small><strong>'.esc_html(ucfirst($platform)).'</strong></div>';}
+  echo '</div><h3>Information you submitted</h3><dl class="erm-manage-fields">';
+  $displayed=0;
+  foreach((array)($s['fields']??[]) as $field){
+   $key=(string)($field['id']??'');if($key===''||!array_key_exists($key,$submitted))continue;
+   $value=$submitted[$key];if(is_array($value))$value=implode(', ',array_map('sanitize_text_field',array_filter($value,'is_scalar')));
+   if(!is_scalar($value)||trim((string)$value)==='')continue;
+   $label=(string)($field['label']??$key);
+   echo '<div><dt>'.esc_html($label).'</dt><dd>'.nl2br(esc_html((string)$value)).'</dd></div>';
+   $displayed++;
+  }
+  if(!$displayed)echo '<div><dt>Details</dt><dd>No additional form fields were provided.</dd></div>';
+  echo '</dl><p class="erm-manage-privacy">This information is visible only through your private appointment management link. Keep that link secure.</p></section>';
   if(isset($_GET['result']))echo '<p class="erm-manage-notice" role="status">Your appointment change has been recorded.</p>';
   if($status!=='cancelled'){
    echo '<section class="erm-manage-card"><h2>Request a different time</h2><p>Choose a new date and available start time. Your change will be reviewed before confirmation.</p><form method="post" action="'.esc_url($url).'"><input type="hidden" name="appointment_action" value="reschedule"><input type="hidden" name="erm_customer_nonce" value="'.esc_attr($nonce).'"><label for="erm-manage-date">New date</label><input id="erm-manage-date" type="date" name="date" min="'.esc_attr(wp_date('Y-m-d')).'" required><label for="erm-manage-time">Available start time</label><select id="erm-manage-time" name="time" required><option value="">Select a date first</option></select><p class="erm-slot-feedback" role="status"></p><button type="submit">Request reschedule</button></form></section>';
