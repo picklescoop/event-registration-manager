@@ -1,3 +1,10 @@
+## 1.3.56 — Appointment request privacy and calendar display settings
+- Stop including an online meeting URL in the initial appointment request notification; joining details are reserved for approval/confirmation.
+- Add an optional combined Google Calendar embed URL under Settings → Appointment Integrations, supporting the Google Calendar embed view of multiple calendars.
+- Keep the existing permitted online meeting service checkboxes and calendar ID list in Appointment Integrations.
+- The embed is for display only and is not a conflict-checking or calendar-write API. Further migration of legacy per-form credentials and full Google OAuth multi-calendar availability/approval testing remain outstanding.
+- Live PHP/browser verification pending.
+
 ## 1.3.54 — Appointment Request scheduler administration page
 - Fix root cause: builder navigation hid the Form Type section containing the appointment settings.
 - Move the existing appointment settings DOM into a dedicated Appointment Scheduling administration page, preserving the original input elements and saved values.
