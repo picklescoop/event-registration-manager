@@ -1,3 +1,10 @@
+## 1.3.52 — Appointment scheduler visibility
+- Show appointment location, meeting and scheduling settings immediately when Form Type changes to Appointment Request.
+- Hide appointment-only settings for Registration, Question / Comment and Shopping Cart forms.
+- Keep visibility synchronized on page load and changes, with a direct form-select handler and delegated admin event listener.
+- No changes to stored appointment settings or frontend booking rules.
+- PHP lint and browser verification pending.
+
 ## 1.3.51 — Payment security foundation (pre-integration)
 - Require actual recorded paid status and full amount whenever a submission has an amount due, even when the selected method is `none`; prevent an unpaid amount from bypassing confirmation checks.
 - Add administrator-only configuration readiness diagnostics for Stripe, PayPal and Square using server-side constants. No secret values are displayed or stored in payment URLs.
