@@ -1,3 +1,10 @@
+## 1.3.60 — Customer appointment detail and scheduler polish
+- Display the customer's submitted form fields, appointment type, location, duration, online platform and private reference number on the appointment management page.
+- Escape all displayed customer values and preserve private token validation and noindex protections.
+- Refine management page layout, detail cards, typography and mobile spacing.
+- Refresh appointment scheduler date/time controls, selection cards and availability feedback styling.
+- PHP lint and live browser testing pending.
+
 ## 1.3.59 — Appointment experience refresh
 - Redesign customer Manage Appointment page with responsive header, current appointment/status summary, reschedule card and separate cancellation area.
 - Improve the public appointment scheduler with styled meeting-type choices and date/time section.
