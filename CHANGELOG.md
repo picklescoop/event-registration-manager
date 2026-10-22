@@ -1,3 +1,9 @@
+## 1.3.62 — Branded appointment emails
+- Style appointment request, organizer notification, confirmation, reschedule and cancellation emails with a responsive purple header, light background, bordered details card and action button, matching the appointment management page.
+- Preserve existing customizable email message content, and send appointment notifications as HTML.
+- Include secure appointment management links in customer email buttons and an organizer review button.
+- Visual email editors were introduced in 1.3.61; live WordPress/PHP validation and email-client testing remain pending.
+
 ## 1.3.60 — Customer appointment detail and scheduler polish
 - Display the customer's submitted form fields, appointment type, location, duration, online platform and private reference number on the appointment management page.
 - Escape all displayed customer values and preserve private token validation and noindex protections.
