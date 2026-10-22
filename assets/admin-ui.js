@@ -5,6 +5,18 @@ document.addEventListener('DOMContentLoaded',()=>{
  const create=(title)=>{const section=document.createElement('section');section.className='erm-ui-section';section.dataset.section=title;blocks.push(section);root.appendChild(section);const h=document.createElement('h3');h.textContent=title;section.appendChild(h);return section;};
  current=create('Form Fields');
  children.forEach(node=>{if(node.tagName==='H3'){const title=node.textContent.trim();current=create(title);node.remove();}else current.appendChild(node);});
+ // The PHP renderer nests appointment settings under the Form type heading.
+ // Extract that existing DOM (never clone inputs) into its own navigation page.
+ const appointmentSettings=root.querySelector('#erm-appointment-settings');
+ if(appointmentSettings){
+   const scheduleBlock=create('Appointment Scheduling');
+   scheduleBlock.appendChild(appointmentSettings);
+   const formTypeBlock=blocks.find(b=>b.dataset.section==='Form type');
+   if(formTypeBlock)formTypeBlock.after(scheduleBlock);
+   // Keep builder navigation authoritative; do not let the old inline style
+   // conceal scheduling inputs once their page is selected.
+   appointmentSettings.style.display='';
+ }
  const intro=document.createElement('div');intro.className='erm-builder-intro';intro.innerHTML='<span class="erm-kicker">FORM BUILDER STUDIO</span><h2>Design a form, without the clutter.</h2><p>Choose a form type, edit fields visually, and configure only the features you need. Use WordPress Update or Publish to save your changes.</p>';
  root.prepend(intro);
  // The WordPress post title is the canonical form name; never save a second copy.
@@ -57,8 +69,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   // No supported WordPress save control: do not fake a successful submission.
   window.alert('The WordPress Publish/Update control is unavailable. Please save using the WordPress editor.');
  });
- chooserSelect.addEventListener('change',()=>{type.value=chooserSelect.value;type.dispatchEvent(new Event('change',{bubbles:true}));active=chooserSelect.value==='appointment'?'Appointment Scheduling':chooserSelect.value==='shop'?'Products, Tickets & Service Levels':'Form Fields';refresh();});
- type.addEventListener('change',()=>{chooserSelect.value=type.value;refresh();});
+ chooserSelect.addEventListener('change',()=>{type.value=chooserSelect.value;type.dispatchEvent(new Event('change',{bubbles:true}));active='Form Fields';refresh();});
+ type.addEventListener('change',()=>{chooserSelect.value=type.value;if(appointmentSettings)appointmentSettings.style.display='';refresh();});
  // Keep the underlying table as the save data model, but replace it with the visual canvas.
  const table=root.querySelector('#erm-fields');if(table){const note=document.createElement('p');note.className='fcrc-legacy-note';note.textContent='Fields are edited in the visual canvas above. The legacy table remains available for compatibility.';table.before(note);}
  refresh();
