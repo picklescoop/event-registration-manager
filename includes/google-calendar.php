@@ -111,13 +111,23 @@ final class ERM_Google_Calendar{
  static function calendar_id($settings){return rawurlencode($settings['google_calendar_id']??'primary');}
  static function busy($event,$date,$settings){
   if(empty(self::config()['refresh_token']))return [];
-  $tz=wp_timezone();$day=DateTimeImmutable::createFromFormat('!Y-m-d',$date,$tz);if(!$day)return new WP_Error('bad_date','Invalid date');
-  $calendar=$settings['google_calendar_id']??'primary';
-  $response=self::api('POST','freeBusy',['timeMin'=>$day->format(DateTimeInterface::RFC3339),'timeMax'=>$day->modify('+1 day')->format(DateTimeInterface::RFC3339),'timeZone'=>wp_timezone_string(),'items'=>[['id'=>$calendar]]]);
+  $tz=wp_timezone();$day=DateTimeImmutable::createFromFormat('!Y-m-d',$date,$tz);
+  if(!$day)return new WP_Error('bad_date','Invalid date');
+  $configured=get_option('erm_appointment_integrations',[]);
+  $ids=is_array($configured)&&!empty($configured['calendar_ids'])?(array)$configured['calendar_ids']:[];
+  if(!$ids)$ids=[(string)($settings['google_calendar_id']??'primary')];
+  $ids=array_values(array_unique(array_filter(array_map('trim',$ids),'strlen')));
+  if(!$ids)return [];
+  $response=self::api('POST','freeBusy',['timeMin'=>$day->format(DateTimeInterface::RFC3339),'timeMax'=>$day->modify('+1 day')->format(DateTimeInterface::RFC3339),'timeZone'=>wp_timezone_string(),'items'=>array_map(static function($id){return ['id'=>$id];},$ids)]);
   if(is_wp_error($response))return $response;
-  $cal=$response['calendars'][$calendar]??null;
-  if(!$cal||!empty($cal['errors']))return new WP_Error('calendar_unavailable','Google Calendar availability unavailable.');
-  $ranges=[];foreach($cal['busy']??[] as $item){try{$ranges[]=[(new DateTimeImmutable($item['start']))->getTimestamp(),(new DateTimeImmutable($item['end']))->getTimestamp()];}catch(Exception $e){}}
+  $ranges=[];
+  foreach($ids as $id){
+   $cal=$response['calendars'][$id]??null;
+   if(!$cal||!empty($cal['errors']))return new WP_Error('calendar_unavailable','Google Calendar availability unavailable for one or more selected calendars.');
+   foreach($cal['busy']??[] as $item){
+    try{$ranges[]=[(new DateTimeImmutable($item['start']))->getTimestamp(),(new DateTimeImmutable($item['end']))->getTimestamp()];}catch(Exception $e){}
+   }
+  }
   return $ranges;
  }
  static function sync($entry,$kind){
