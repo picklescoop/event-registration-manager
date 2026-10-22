@@ -1,3 +1,8 @@
+## 1.3.53 — Emergency PHP syntax fix
+- Fix unescaped single quotes introduced in the inline appointment form-type change handler in v1.3.52. These broke the surrounding single-quoted PHP echo string and caused a critical error.
+- Preserve appointment-only scheduler visibility behavior.
+- PHP lint and live-site verification still pending; do not use v1.3.52.
+
 ## 1.3.52 — Appointment scheduler visibility
 - Show appointment location, meeting and scheduling settings immediately when Form Type changes to Appointment Request.
 - Hide appointment-only settings for Registration, Question / Comment and Shopping Cart forms.
