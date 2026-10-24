@@ -1,3 +1,10 @@
+## 1.3.72 — Local-only integrations
+- Remove the proposed shared OAuth broker and its external-service opt-in UI and handler.
+- Update integration readiness panels to specify direct provider authorization and locally stored per-installation credentials and tokens.
+- Preserve existing local Google and Microsoft account connection workflows and manual payment settings.
+- Providers without complete integrations remain clearly marked as requiring local setup; automated checkout remains unavailable until securely implemented and tested.
+- PHP lint and WordPress runtime verification pending.
+
 ## 1.3.71 — Independent installation Connect framework
 - Introduce a per-WordPress-installation UUID and explicit optional external-connection preference.
 - Add a Super Forms Connect readiness panel to Appointment Integrations and Payment Accounts, with provider-specific plans for calendar, meeting and payment sign-in.
