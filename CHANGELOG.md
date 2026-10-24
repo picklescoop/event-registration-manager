@@ -1,3 +1,11 @@
+## 1.3.68 — Microsoft 365 calendars and consolidated Google settings
+- Add Microsoft 365/Outlook calendar read integration via Microsoft Entra application credentials and Microsoft Graph Calendars.Read application permission.
+- Configure tenant ID, application ID, mailbox owner, secret, and enable toggle in Settings → Appointment Integrations.
+- Use Microsoft busy events to block normal appointment slots, and Microsoft calendar events with matching titles to offer guest-speaker meeting windows.
+- Display Google OAuth credentials, connect/disconnect, and synchronization diagnostics directly within Appointment Integrations; preserve legacy Google connection data and redirect existing actions to the consolidated page.
+- Microsoft integration currently reads calendars only; it does not create or update Outlook calendar events. Google OAuth retains its existing event synchronization.
+- Live authentication, WordPress end-to-end testing, and PHP lint are pending.
+
 ## 1.3.67 — Guest speaker calendar-event scheduling
 - Add a per-appointment-form option to offer slots only within timed Google Calendar events whose titles contain a configurable keyword (for example, `meeting`).
 - Search accessible configured Google calendars using their events API, including recurring instances, with pagination. All-day events are excluded.
