@@ -37,6 +37,7 @@ final class ERM_Microsoft_Calendar{
   $events=self::events($date);if(is_wp_error($events))return $events;$ranges=[];
   foreach($events as $item){
    if(!empty($item['isCancelled'])||!empty($item['isAllDay']))continue;
+   if($keyword===''&&($item['showAs']??'busy')==='free')continue;
    if($keyword!==''&&stripos((string)($item['subject']??''),$keyword)===false)continue;
    $a=$item['start']['dateTime']??'';$b=$item['end']['dateTime']??'';
    if(!$a||!$b)continue;
