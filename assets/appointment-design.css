@@ -63,3 +63,31 @@
 .erm-form .erm-appointment-request .erm-slot-feedback{background:#f0f2f9;border-radius:9px;padding:12px 15px;margin-top:10px}
 .erm-form .erm-appointment-mode>label{box-shadow:0 3px 8px rgba(30,30,60,.035)}
 @media(max-width:640px){.erm-manage-details-grid,.erm-manage-fields{grid-template-columns:1fr}.erm-form .erm-appointment-request>label{width:100%;margin-right:0}}
+
+/* v1.3.64 — Calendly-inspired appointment date/time picker */
+.erm-form .erm-appointment-request.erm-calendar-enhanced{padding:clamp(18px,3vw,32px);max-width:100%;box-sizing:border-box}
+.erm-form .erm-appointment-request .erm-native-picker{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+.erm-booking-layout{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(220px,1fr);gap:26px;margin-top:16px}
+.erm-booking-calendar{min-width:0;padding-right:24px;border-right:1px solid #e5e7ef}
+.erm-booking-topline{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.erm-booking-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#65568d;font-weight:800}
+.erm-booking-layout h3{font-size:1.1rem;margin:5px 0 14px;color:#252c42}
+.erm-booking-nav{display:flex;gap:6px}
+.erm-booking-nav button{width:36px;height:36px;border-radius:50%;border:1px solid #e0e2ee;background:#fff;color:#4c3e7a;font-size:24px;line-height:1;cursor:pointer}
+.erm-booking-nav button:disabled{opacity:.3;cursor:default}
+.erm-booking-month{font-size:1rem;font-weight:750;color:#303950;margin:10px 0 15px}
+.erm-booking-weekdays,.erm-booking-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;text-align:center}
+.erm-booking-weekdays{font-size:11px;font-weight:700;color:#748096;margin-bottom:8px}
+.erm-booking-weekdays span{padding:6px 0}
+.erm-booking-day{aspect-ratio:1;min-height:36px;padding:0!important;border:1px solid transparent!important;border-radius:50%!important;background:transparent!important;color:#313a53!important;font-size:.92rem!important;font-weight:650!important;cursor:pointer}
+.erm-booking-day:not(:disabled):hover{background:#eeeaf8!important;color:#4c3e7a!important}
+.erm-booking-day.is-selected{background:#594395!important;color:#fff!important;box-shadow:0 3px 9px rgba(89,67,149,.24)}
+.erm-booking-day:disabled{color:#bec4cf!important;cursor:not-allowed}
+.erm-booking-times{min-width:0}
+.erm-booking-time-list{display:flex;flex-direction:column;gap:9px;max-height:350px;overflow-y:auto;padding:2px 5px 2px 1px}
+.erm-booking-time{padding:12px 16px!important;min-height:46px;background:#fff!important;border:1px solid #bdb2d8!important;border-radius:9px!important;color:#55418a!important;font-weight:750!important;cursor:pointer;text-align:center}
+.erm-booking-time:hover{background:#f1eef8!important}
+.erm-booking-time.is-selected{background:#594395!important;color:#fff!important;border-color:#594395!important}
+.erm-booking-placeholder{padding:20px 15px;background:#f7f8fc;border:1px dashed #dce0e9;border-radius:10px;color:#69758b;font-size:.9rem}
+.erm-booking-day:focus-visible,.erm-booking-time:focus-visible,.erm-booking-nav button:focus-visible{outline:3px solid #a38bd8;outline-offset:2px}
+@media(max-width:700px){.erm-booking-layout{grid-template-columns:1fr;gap:20px}.erm-booking-calendar{border-right:0;border-bottom:1px solid #e5e7ef;padding-right:0;padding-bottom:20px}.erm-booking-time-list{max-height:270px}.erm-booking-day{min-height:40px}}
