@@ -12,7 +12,7 @@ final class ERM_Google_Calendar{
   add_action('admin_post_erm_google_retry',[__CLASS__,'manual_retry']);
  }
  static function menu(){add_submenu_page('edit.php?post_type=erm_event','Google Calendar','Google Calendar','manage_options','erm-google-calendar',[__CLASS__,'page']);add_action('admin_menu',static function(){remove_submenu_page('edit.php?post_type=erm_event','erm-google-calendar');},99);}
- static function config(){return (array)get_option(self::OPTION,[]);}
+ static function config(){return ERM_Secret_Store::read(self::OPTION,['client_secret','refresh_token','access_token']);}
  static function redirect_uri(){return admin_url('admin-post.php?action=erm_google_callback');}
  static function page($embedded=false){
   if(!current_user_can('manage_options'))wp_die('Forbidden',403);
@@ -44,7 +44,7 @@ final class ERM_Google_Calendar{
   if(!current_user_can('manage_options'))wp_die('Forbidden',403);check_admin_referer('erm_google_save');
   $o=self::config();$o['client_id']=sanitize_text_field(wp_unslash($_POST['client_id']??''));
   $secret=trim((string)wp_unslash($_POST['client_secret']??''));if($secret!=='')$o['client_secret']=$secret;
-  update_option(self::OPTION,$o,false);
+  $saved=ERM_Secret_Store::write(self::OPTION,$o,['client_secret','refresh_token','access_token']);if(is_wp_error($saved))wp_die(esc_html($saved->get_error_message()));
   wp_safe_redirect(admin_url('edit.php?post_type=erm_event&page=erm-appointment-integrations'));exit;
  }
  static function start(){
@@ -64,12 +64,12 @@ final class ERM_Google_Calendar{
   $data=json_decode(wp_remote_retrieve_body($response),true);
   if(empty($data['refresh_token']))wp_die('Google did not return a refresh token. Reconnect with consent.');
   $o['refresh_token']=$data['refresh_token'];$o['access_token']=$data['access_token']??'';$o['expires_at']=time()+max(0,(int)($data['expires_in']??3600)-90);
-  update_option(self::OPTION,$o,false);
+  $saved=ERM_Secret_Store::write(self::OPTION,$o,['client_secret','refresh_token','access_token']);if(is_wp_error($saved))wp_die(esc_html($saved->get_error_message()));
   wp_safe_redirect(admin_url('edit.php?post_type=erm_event&page=erm-appointment-integrations'));exit;
  }
  static function disconnect(){
   if(!current_user_can('manage_options'))wp_die('Forbidden',403);check_admin_referer('erm_google_disconnect');
-  $o=self::config();unset($o['refresh_token'],$o['access_token'],$o['expires_at']);update_option(self::OPTION,$o,false);
+  $o=self::config();unset($o['refresh_token'],$o['access_token'],$o['expires_at']);$saved=ERM_Secret_Store::write(self::OPTION,$o,['client_secret','refresh_token','access_token']);if(is_wp_error($saved))wp_die(esc_html($saved->get_error_message()));
   wp_safe_redirect(admin_url('edit.php?post_type=erm_event&page=erm-appointment-integrations'));exit;
  }
  static function token(){
@@ -79,7 +79,7 @@ final class ERM_Google_Calendar{
   if(is_wp_error($response))return $response;
   $data=json_decode(wp_remote_retrieve_body($response),true);
   if(empty($data['access_token']))return new WP_Error('google_refresh_failed','Unable to refresh Google access token.');
-  $o['access_token']=$data['access_token'];$o['expires_at']=time()+max(0,(int)($data['expires_in']??3600)-90);update_option(self::OPTION,$o,false);
+  $o['access_token']=$data['access_token'];$o['expires_at']=time()+max(0,(int)($data['expires_in']??3600)-90);$saved=ERM_Secret_Store::write(self::OPTION,$o,['client_secret','refresh_token','access_token']);if(is_wp_error($saved))wp_die(esc_html($saved->get_error_message()));
   return $o['access_token'];
  }
  static function api($method,$path,$body=null){
