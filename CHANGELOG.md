@@ -1,3 +1,10 @@
+## 1.3.66 — Centralize Google appointment booking settings
+- Move Google appointment booking page URL and connected Google Calendar ID inputs from individual form scheduling settings to Settings → Appointment Integrations.
+- Keep per-form scheduling duration, time windows and availability controls in the form editor.
+- Retain existing per-form Google settings as fallback and avoid clearing them when the form is saved.
+- Global values override per-form values when configured.
+- PHP lint and live WordPress testing pending.
+
 ## 1.3.65 — Appointment integration setup documentation
 - Add administrator-facing expandable setup guides under Settings → Appointment Integrations for Zoom, Microsoft Teams, Discord, Slack, FreeConferenceCall.com, other meeting services, and Google Calendar.
 - Explain fixed meeting links versus automatic meeting creation, required provider credentials and permissions, calendar IDs, embed-only limitations, testing, troubleshooting and secret handling.
