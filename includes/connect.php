@@ -31,3 +31,6 @@ final class ERM_Connect{
   echo '<p><strong>Privacy:</strong> Provider authorization and API requests should go directly between this WordPress installation and the selected provider. No installation identity, credentials, tokens, registration records or payment data are transmitted to a Super Forms central service.</p>';
   echo '<p>Existing Google and Microsoft OAuth settings can be configured on this website. Other provider integrations require further implementation and testing.</p>';
 
+  echo '</section>';
+ }
+}
