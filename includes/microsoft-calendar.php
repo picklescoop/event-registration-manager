@@ -20,11 +20,11 @@ final class ERM_Microsoft_Calendar{
   $c=self::config();$response=wp_safe_remote_post('https://login.microsoftonline.com/common/oauth2/v2.0/token',['timeout'=>15,'body'=>['client_id'=>$c['client_id'],'client_secret'=>$c['client_secret'],'code'=>sanitize_text_field(wp_unslash($_GET['code'])),'redirect_uri'=>self::redirect_uri(),'grant_type'=>'authorization_code','scope'=>'offline_access User.Read Calendars.Read']]);
   if(is_wp_error($response))wp_die(esc_html($response->get_error_message()));$data=json_decode(wp_remote_retrieve_body($response),true);
   if(empty($data['access_token'])||empty($data['refresh_token']))wp_die('Microsoft did not return the tokens required for calendar access. Check app account types, permissions and redirect URI.');
-  $c['refresh_token']=$data['refresh_token'];$c['access_token']=$data['access_token'];$c['expires_at']=time()+max(0,(int)($data['expires_in']??3600)-120);$c['enabled']=true;update_option('erm_microsoft_calendar',$c,false);wp_safe_redirect(self::back());exit;
+  $c['refresh_token']=$data['refresh_token'];$c['access_token']=$data['access_token'];$c['expires_at']=time()+max(0,(int)($data['expires_in']??3600)-120);$c['enabled']=true;$saved=ERM_Secret_Store::write('erm_microsoft_calendar',$c,['client_secret','refresh_token','access_token']);if(is_wp_error($saved))return $saved;wp_safe_redirect(self::back());exit;
  }
- static function disconnect(){if(!current_user_can('manage_options'))wp_die('Forbidden',403);check_admin_referer('erm_ms_disconnect');$c=self::config();unset($c['refresh_token'],$c['access_token'],$c['expires_at']);$c['enabled']=false;update_option('erm_microsoft_calendar',$c,false);wp_safe_redirect(self::back());exit;}
+ static function disconnect(){if(!current_user_can('manage_options'))wp_die('Forbidden',403);check_admin_referer('erm_ms_disconnect');$c=self::config();unset($c['refresh_token'],$c['access_token'],$c['expires_at']);$c['enabled']=false;$saved=ERM_Secret_Store::write('erm_microsoft_calendar',$c,['client_secret','refresh_token','access_token']);if(is_wp_error($saved))return $saved;wp_safe_redirect(self::back());exit;}
 
- static function config(){return (array)get_option('erm_microsoft_calendar',[]);}
+ static function config(){return ERM_Secret_Store::read('erm_microsoft_calendar',['client_secret','refresh_token','access_token']);}
  static function enabled(){ $c=self::config();return !empty($c['enabled'])&&!empty($c['client_id'])&&!empty($c['client_secret'])&&(!empty($c['refresh_token'])||(!empty($c['tenant_id'])&&!empty($c['user_id'])));}
  static function token(){
   $c=self::config();if(!self::enabled())return new WP_Error('ms_not_connected','Microsoft calendar connection is not configured.');
@@ -32,7 +32,7 @@ final class ERM_Microsoft_Calendar{
    if(!empty($c['access_token'])&&($c['expires_at']??0)>time())return $c['access_token'];
    $response=wp_safe_remote_post('https://login.microsoftonline.com/common/oauth2/v2.0/token',['timeout'=>15,'body'=>['client_id'=>$c['client_id'],'client_secret'=>$c['client_secret'],'refresh_token'=>$c['refresh_token'],'grant_type'=>'refresh_token','scope'=>'offline_access User.Read Calendars.Read']]);
    if(is_wp_error($response))return $response;$data=json_decode(wp_remote_retrieve_body($response),true);if(empty($data['access_token']))return new WP_Error('ms_refresh_failed','Reconnect Microsoft calendar: authorization has expired.');
-   $c['access_token']=$data['access_token'];if(!empty($data['refresh_token']))$c['refresh_token']=$data['refresh_token'];$c['expires_at']=time()+max(0,(int)($data['expires_in']??3600)-120);update_option('erm_microsoft_calendar',$c,false);return $c['access_token'];
+   $c['access_token']=$data['access_token'];if(!empty($data['refresh_token']))$c['refresh_token']=$data['refresh_token'];$c['expires_at']=time()+max(0,(int)($data['expires_in']??3600)-120);$saved=ERM_Secret_Store::write('erm_microsoft_calendar',$c,['client_secret','refresh_token','access_token']);if(is_wp_error($saved))return $saved;return $c['access_token'];
   }
   $cache='erm_ms_token_'.md5($c['tenant_id'].'|'.$c['client_id']);$cached=get_transient($cache);if(is_string($cached)&&$cached!=='')return $cached;
   $url='https://login.microsoftonline.com/'.rawurlencode($c['tenant_id']).'/oauth2/v2.0/token';
