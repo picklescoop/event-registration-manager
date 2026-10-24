@@ -1,3 +1,11 @@
+## 1.3.67 — Guest speaker calendar-event scheduling
+- Add a per-appointment-form option to offer slots only within timed Google Calendar events whose titles contain a configurable keyword (for example, `meeting`).
+- Search accessible configured Google calendars using their events API, including recurring instances, with pagination. All-day events are excluded.
+- Treat matching meeting events as eligible booking windows rather than blocking them through Google free/busy; existing submitted appointments for the form still block overlapping times.
+- Require a working Google Calendar connection for this mode; no matching events or API errors result in no offered slots.
+- Normal weekly availability remains available when the option is disabled.
+- Note: this mode does not yet separately subtract other unrelated busy events on those calendars. PHP lint and live WordPress testing pending.
+
 ## 1.3.66 — Centralize Google appointment booking settings
 - Move Google appointment booking page URL and connected Google Calendar ID inputs from individual form scheduling settings to Settings → Appointment Integrations.
 - Keep per-form scheduling duration, time windows and availability controls in the form editor.
