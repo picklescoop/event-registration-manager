@@ -1,3 +1,11 @@
+## 1.3.71 — Independent installation Connect framework
+- Introduce a per-WordPress-installation UUID and explicit optional external-connection preference.
+- Add a Super Forms Connect readiness panel to Appointment Integrations and Payment Accounts, with provider-specific plans for calendar, meeting and payment sign-in.
+- Clearly distinguish existing direct provider connections and manual payment links from a not-yet-deployed central OAuth broker. Do not expose fake Connect buttons or enable unverified checkout.
+- Preserve existing settings and manual workflows. No customer records or payment details are sent to a central service by this framework.
+- A secure hosted broker, provider app registrations, OAuth callback exchange, signed site-bound connection grants, and tested payment webhooks remain prerequisites for live one-click integrations.
+- PHP lint and WordPress end-to-end testing pending.
+
 ## 1.3.70 — Microsoft account sign-in for personal and business calendars
 - Add delegated Microsoft OAuth authorization for Microsoft 365 work/school accounts and personal Outlook.com, Hotmail, and Live accounts, using the Microsoft common authority.
 - Add Sign in with Microsoft and Disconnect controls in Appointment Integrations, with an explicit redirect URI and connection status.
