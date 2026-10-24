@@ -1,3 +1,9 @@
+## 1.3.64 — Calendly-inspired public scheduler
+- Replace the plain appointment date/time controls with an interactive month calendar and individual selectable time-slot buttons.
+- Provide month navigation, date bounds, loading/empty feedback, selection highlighting, keyboard-accessible controls, and mobile stacking.
+- Keep native date/time inputs synchronized for existing submission and availability validation.
+- PHP lint, browser accessibility testing, and live WordPress end-to-end tests remain pending.
+
 ## 1.3.63 — Centralized appointment provider credentials
 - Move Zoom, Microsoft Teams and Discord credential inputs from individual appointment forms to Settings → Appointment Integrations.
 - Use global credentials for meeting creation; preserve existing per-form credentials as fallback until global values are supplied.
