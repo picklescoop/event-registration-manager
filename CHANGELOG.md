@@ -1,3 +1,9 @@
+## 1.3.65 — Appointment integration setup documentation
+- Add administrator-facing expandable setup guides under Settings → Appointment Integrations for Zoom, Microsoft Teams, Discord, Slack, FreeConferenceCall.com, other meeting services, and Google Calendar.
+- Explain fixed meeting links versus automatic meeting creation, required provider credentials and permissions, calendar IDs, embed-only limitations, testing, troubleshooting and secret handling.
+- Link directly to official provider developer portals and the existing Google Calendar connection settings.
+- PHP lint and live WordPress UI testing pending.
+
 ## 1.3.64 — Calendly-inspired public scheduler
 - Replace the plain appointment date/time controls with an interactive month calendar and individual selectable time-slot buttons.
 - Provide month navigation, date bounds, loading/empty feedback, selection highlighting, keyboard-accessible controls, and mobile stacking.
