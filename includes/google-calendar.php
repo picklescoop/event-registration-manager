@@ -11,13 +11,13 @@ final class ERM_Google_Calendar{
   add_action('erm_google_retry_entry',[__CLASS__,'retry_entry'],10,1);
   add_action('admin_post_erm_google_retry',[__CLASS__,'manual_retry']);
  }
- static function menu(){add_submenu_page('edit.php?post_type=erm_event','Google Calendar','Google Calendar','manage_options','erm-google-calendar',[__CLASS__,'page']);}
+ static function menu(){add_submenu_page('edit.php?post_type=erm_event','Google Calendar','Google Calendar','manage_options','erm-google-calendar',[__CLASS__,'page']);add_action('admin_menu',static function(){remove_submenu_page('edit.php?post_type=erm_event','erm-google-calendar');},99);}
  static function config(){return (array)get_option(self::OPTION,[]);}
  static function redirect_uri(){return admin_url('admin-post.php?action=erm_google_callback');}
- static function page(){
+ static function page($embedded=false){
   if(!current_user_can('manage_options'))wp_die('Forbidden',403);
   $o=self::config();
-  echo '<div class="wrap"><h1>Google Calendar connection</h1><p>Connect a Google account to check busy times and synchronize confirmed appointments. Create a Google Cloud OAuth client (Web application), enable Google Calendar API, and add this redirect URI:</p><code>'.esc_html(self::redirect_uri()).'</code>';
+  echo ($embedded?'<section class="erm-google-connection">':'<div class="wrap">').'<h1>Google Calendar connection</h1><p>Connect a Google account to check busy times and synchronize confirmed appointments. Create a Google Cloud OAuth client (Web application), enable Google Calendar API, and add this redirect URI:</p><code>'.esc_html(self::redirect_uri()).'</code>';
   echo '<form method="post" action="'.esc_url(admin_url('admin-post.php')).'"><input type="hidden" name="action" value="erm_google_save">';
   wp_nonce_field('erm_google_save');
   echo '<p><label>OAuth client ID<br><input class="regular-text" name="client_id" value="'.esc_attr($o['client_id']??'').'"></label></p><p><label>OAuth client secret<br><input class="regular-text" type="password" name="client_secret" autocomplete="new-password" placeholder="'.(!empty($o['client_secret'])?'Saved; leave blank to keep':'Enter secret').'"></label></p><button class="button button-primary">Save OAuth credentials</button></form>';
@@ -38,14 +38,14 @@ final class ERM_Google_Calendar{
   if(!$entries)echo '<tr><td colspan="5">No synchronization attempts recorded yet.</td></tr>';
   echo '</tbody></table>';
   if(isset($_GET['retried']))echo '<div class="notice notice-info"><p>Synchronization retried. Review the updated status below.</p></div>';
-  echo '<p>Use a calendar ID such as <code>primary</code> in each appointment form. Confirmed appointments sync to the selected calendar. A failed Google API call must be resolved before assuming an appointment is on the calendar.</p></div>';
+  echo '<p>Use a calendar ID such as <code>primary</code> in each appointment form. Confirmed appointments sync to the selected calendar. A failed Google API call must be resolved before assuming an appointment is on the calendar.</p>'.($embedded?'</section>':'</div>');
  }
  static function save(){
   if(!current_user_can('manage_options'))wp_die('Forbidden',403);check_admin_referer('erm_google_save');
   $o=self::config();$o['client_id']=sanitize_text_field(wp_unslash($_POST['client_id']??''));
   $secret=trim((string)wp_unslash($_POST['client_secret']??''));if($secret!=='')$o['client_secret']=$secret;
   update_option(self::OPTION,$o,false);
-  wp_safe_redirect(admin_url('edit.php?post_type=erm_event&page=erm-google-calendar'));exit;
+  wp_safe_redirect(admin_url('edit.php?post_type=erm_event&page=erm-appointment-integrations'));exit;
  }
  static function start(){
   if(!current_user_can('manage_options'))wp_die('Forbidden',403);check_admin_referer('erm_google_start');
@@ -65,12 +65,12 @@ final class ERM_Google_Calendar{
   if(empty($data['refresh_token']))wp_die('Google did not return a refresh token. Reconnect with consent.');
   $o['refresh_token']=$data['refresh_token'];$o['access_token']=$data['access_token']??'';$o['expires_at']=time()+max(0,(int)($data['expires_in']??3600)-90);
   update_option(self::OPTION,$o,false);
-  wp_safe_redirect(admin_url('edit.php?post_type=erm_event&page=erm-google-calendar'));exit;
+  wp_safe_redirect(admin_url('edit.php?post_type=erm_event&page=erm-appointment-integrations'));exit;
  }
  static function disconnect(){
   if(!current_user_can('manage_options'))wp_die('Forbidden',403);check_admin_referer('erm_google_disconnect');
   $o=self::config();unset($o['refresh_token'],$o['access_token'],$o['expires_at']);update_option(self::OPTION,$o,false);
-  wp_safe_redirect(admin_url('edit.php?post_type=erm_event&page=erm-google-calendar'));exit;
+  wp_safe_redirect(admin_url('edit.php?post_type=erm_event&page=erm-appointment-integrations'));exit;
  }
  static function token(){
   $o=self::config();if(empty($o['refresh_token']))return new WP_Error('google_not_connected','Google Calendar is not connected.');
@@ -106,7 +106,7 @@ final class ERM_Google_Calendar{
   if(get_post_type($entry)!=='erm_entry')wp_die('Invalid booking',400);
   delete_post_meta($entry,'_erm_google_retry_count');
   self::retry_entry($entry);
-  wp_safe_redirect(add_query_arg('retried','1',admin_url('edit.php?post_type=erm_event&page=erm-google-calendar')));exit;
+  wp_safe_redirect(add_query_arg('retried','1',admin_url('edit.php?post_type=erm_event&page=erm-appointment-integrations')));exit;
  }
  static function calendar_id($settings){return rawurlencode($settings['google_calendar_id']??'primary');}
  static function matching_event_windows($date,$settings){
