@@ -1,3 +1,10 @@
+## 1.3.63 — Centralized appointment provider credentials
+- Move Zoom, Microsoft Teams and Discord credential inputs from individual appointment forms to Settings → Appointment Integrations.
+- Use global credentials for meeting creation; preserve existing per-form credentials as fallback until global values are supplied.
+- Mask stored secrets in the settings UI and preserve them when secret inputs are left empty.
+- Preserve all existing global appointment integration options when saving.
+- PHP lint and WordPress end-to-end testing pending.
+
 ## 1.3.62 — Branded appointment emails
 - Style appointment request, organizer notification, confirmation, reschedule and cancellation emails with a responsive purple header, light background, bordered details card and action button, matching the appointment management page.
 - Preserve existing customizable email message content, and send appointment notifications as HTML.
