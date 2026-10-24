@@ -2,17 +2,18 @@
 /**
  * Plugin Name: Form, Cart and Registration Creator
  * Description: Reusable event forms with configurable fields, optional payments, uploads, receipts, and registration management.
- * Version: 1.3.67
+ * Version: 1.3.68
  * Requires PHP: 7.4
  * License: GPL-2.0-or-later
  * Text Domain: event-registration-manager
  */
 if (!defined('ABSPATH')) exit;
 require_once __DIR__.'/includes/google-calendar.php';
+require_once __DIR__.'/includes/microsoft-calendar.php';
 require_once __DIR__.'/includes/shipping-providers.php';
 require_once __DIR__.'/includes/shippo.php';
 final class ERM_Plugin {
- const VERSION='1.3.67';
+ const VERSION='1.3.68';
  static $reschedule_entry=0;
  const DEFAULT_FIELDS=[['id'=>'name','label'=>'Full Name','type'=>'text','required'=>true],['id'=>'business','label'=>'Business / Organization','type'=>'text','required'=>false],['id'=>'address','label'=>'Mailing Address','type'=>'textarea','required'=>false],['id'=>'phone','label'=>'Phone Number','type'=>'tel','required'=>false],['id'=>'email','label'=>'Email Address','type'=>'email','required'=>true],['id'=>'products','label'=>'Products Sold','type'=>'textarea','required'=>false]];
  static function init(){ERM_Google_Calendar::init();ERM_Shipping_Providers::init();ERM_Shippo::init();add_action('admin_post_nopriv_erm_manage_appointment',[__CLASS__,'customer_appointment']);add_action('admin_post_erm_manage_appointment',[__CLASS__,'customer_appointment']);add_action('admin_post_erm_reschedule',[__CLASS__,'reschedule']);add_action('wp_ajax_erm_available_slots',[__CLASS__,'available_slots']);add_action('wp_ajax_nopriv_erm_available_slots',[__CLASS__,'available_slots']);add_action('init',[__CLASS__,'types']);add_action('add_meta_boxes',[__CLASS__,'metaboxes']);add_action('save_post_erm_event',[__CLASS__,'save_event']);add_shortcode('event_registration',[__CLASS__,'form']);add_shortcode('event_registrations',[__CLASS__,'public_list']);add_action('admin_post_nopriv_erm_submit',[__CLASS__,'submit']);add_action('admin_post_erm_submit',[__CLASS__,'submit']);add_action('admin_menu',[__CLASS__,'admin_menu']);add_action('admin_head',[__CLASS__,'hide_dashboard_submenu']);add_action('admin_init',[__CLASS__,'redirect_forms_home']);add_action('admin_post_erm_status',[__CLASS__,'status']);add_action('admin_post_erm_delete_submission',[__CLASS__,'delete_submission']);add_action('admin_post_erm_save_payment_accounts',[__CLASS__,'save_payment_accounts']);add_action('admin_post_erm_save_appointment_integrations',[__CLASS__,'save_appointment_integrations']);add_action('admin_post_erm_record_payment',[__CLASS__,'record_payment']);add_action('admin_post_erm_export',[__CLASS__,'export']);add_action('admin_post_erm_reply',[__CLASS__,'reply']);add_action('admin_post_erm_checkin',[__CLASS__,'checkin']);add_action('admin_post_erm_undo_checkin',[__CLASS__,'undo_checkin']);add_action('admin_post_erm_ticket',[__CLASS__,'ticket_page']);add_action('admin_post_nopriv_erm_ticket',[__CLASS__,'ticket_page']);add_action('admin_post_erm_scanner',[__CLASS__,'scanner_page']);add_action('admin_enqueue_scripts',[__CLASS__,'admin_assets']);add_action('admin_footer-edit.php',[__CLASS__,'shortcode_copy_script']);add_action('admin_footer-post.php',[__CLASS__,'appointment_builder_visibility_script']);add_action('admin_footer-post-new.php',[__CLASS__,'appointment_builder_visibility_script']);add_action('wp_enqueue_scripts',[__CLASS__,'styles']);add_filter('manage_erm_event_posts_columns',[__CLASS__,'form_list_columns']);add_action('manage_erm_event_posts_custom_column',[__CLASS__,'form_list_column'],10,2);add_filter('post_row_actions',[__CLASS__,'clone_row_action'],10,2);add_action('admin_post_erm_clone_form',[__CLASS__,'clone_form']);add_action('admin_post_erm_export_form',[__CLASS__,'export_form']);add_action('admin_post_erm_import_form',[__CLASS__,'import_form']);}
@@ -117,6 +118,12 @@ final class ERM_Plugin {
   echo '<h2>Automatic meeting creation credentials</h2><p>These account credentials apply to all appointment forms. Leave a saved secret blank to keep its existing value. Existing per-form credentials continue to work as fallback until you enter global credentials.</p>';
   $credentials=['zoom_account_id'=>'Zoom Account ID','zoom_client_id'=>'Zoom Client ID','zoom_client_secret'=>'Zoom Client Secret','zoom_user'=>'Zoom host email','teams_tenant_id'=>'Teams tenant ID','teams_client_id'=>'Teams app client ID','teams_client_secret'=>'Teams app client secret','teams_user_id'=>'Teams organizer user object ID','discord_bot_token'=>'Discord bot token','discord_channel_id'=>'Discord voice channel ID'];
   foreach($credentials as $key=>$label){$secret=in_array($key,['zoom_client_secret','teams_client_secret','discord_bot_token'],true);echo '<p><label><strong>'.esc_html($label).'</strong><br><input class="regular-text" type="'.($secret?'password':'text').'" name="provider_credentials['.esc_attr($key).']" value="'.($secret?'':esc_attr($o['provider_credentials'][$key]??'')).'" autocomplete="off" placeholder="'.($secret&&!empty($o['provider_credentials'][$key])?'Saved — leave blank to keep':'').'"></label></p>';}
+  $ms=ERM_Microsoft_Calendar::config();
+  echo '<h2>Microsoft 365 / Outlook Calendar</h2><p>Connect a Microsoft 365 work or school calendar through a Microsoft Entra application. This integration reads calendar events to block busy times or find guest-speaker meetings. It does not currently write confirmed appointments to Outlook.</p>';
+  echo '<p><label><input type="checkbox" name="ms_enabled" value="1" '.checked(!empty($ms['enabled']),true,false).'> Enable Microsoft 365 calendar availability</label></p>';
+  foreach(['tenant_id'=>'Directory (tenant) ID','client_id'=>'Application (client) ID','user_id'=>'Calendar owner email or user object ID'] as $key=>$label)echo '<p><label>'.esc_html($label).'<br><input class="regular-text" name="ms['.esc_attr($key).']" value="'.esc_attr($ms[$key]??'').'"></label></p>';
+  echo '<p><label>Client secret<br><input type="password" class="regular-text" autocomplete="new-password" name="ms[client_secret]" placeholder="'.(!empty($ms['client_secret'])?'Saved — leave blank to keep':'Enter client secret').'"></label></p>';
+  echo '<p class="description">Setup: Register an app in <a href="https://entra.microsoft.com/" target="_blank" rel="noopener noreferrer">Microsoft Entra</a>, grant Microsoft Graph <code>Calendars.Read</code> <strong>application</strong> permission, obtain tenant administrator consent, create a client secret, and enter the mailbox owner. Use an account authorized for that calendar. Restrict the app to the intended mailbox where supported.</p>';
   echo '<h2>Google appointment booking</h2><p>These settings apply across appointment forms. Previously configured per-form values are retained as fallbacks until a global value is entered.</p>';
   echo '<p><label>Google appointment booking page URL<br><input type="url" class="large-text" name="google_booking_url" value="'.esc_attr($o['google_booking_url']??'').'" placeholder="https://calendar.google.com/calendar/appointments/..."></label></p>';
   echo '<p><label>Google Calendar ID (connected account)<br><input type="text" class="regular-text" name="google_calendar_id" value="'.esc_attr($o['google_calendar_id']??'').'" placeholder="primary"></label></p>';
@@ -164,6 +171,11 @@ final class ERM_Plugin {
   $booking_url=esc_url_raw(trim((string)wp_unslash($_POST['google_booking_url']??'')));
   if($booking_url!==''&&strpos($booking_url,'https://')!==0)$booking_url='';
   $calendar_id=sanitize_text_field(wp_unslash($_POST['google_calendar_id']??''));
+  $ms_old=ERM_Microsoft_Calendar::config();$ms_new=['enabled'=>!empty($_POST['ms_enabled'])];
+  $ms_post=isset($_POST['ms'])&&is_array($_POST['ms'])?wp_unslash($_POST['ms']):[];
+  foreach(['tenant_id','client_id','user_id'] as $key)$ms_new[$key]=sanitize_text_field($ms_post[$key]??'');
+  $secret=trim((string)($ms_post['client_secret']??''));$ms_new['client_secret']=$secret!==''?$secret:($ms_old['client_secret']??'');
+  update_option('erm_microsoft_calendar',$ms_new,false);
   update_option('erm_appointment_integrations',['formats'=>$formats,'meeting_links'=>$links,'calendar_ids'=>array_slice(array_values(array_unique($ids)),0,30),'calendar_embed_url'=>$embed,'provider_credentials'=>$credentials,'google_booking_url'=>$booking_url,'google_calendar_id'=>$calendar_id],false);
   wp_safe_redirect(add_query_arg('saved','1',admin_url('edit.php?post_type=erm_event&page=erm-appointment-integrations')));exit;
  }
@@ -360,6 +372,12 @@ JS;
   $event_only=!empty($s['appointment_event_only']);
   if($event_only){
    $matched=ERM_Google_Calendar::matching_event_windows($date,$s);
+   if(ERM_Microsoft_Calendar::enabled()){
+    $ms_matches=ERM_Microsoft_Calendar::ranges($date,trim((string)($s['appointment_event_keyword']??'meeting')));
+    if(is_wp_error($ms_matches))return [];
+    if(is_wp_error($matched))$matched=[];
+    $matched=array_merge($matched,$ms_matches);
+   }
    if(is_wp_error($matched)||!$matched)return [];
    $windows=[];
    foreach($matched as $range){
@@ -383,7 +401,8 @@ JS;
    $length=$stored>0?$stored:$duration;
    $busy[]=[$taken->getTimestamp()-$before*60,$taken->getTimestamp()+($length+$after)*60];
   }
-  $external=$event_only?[]:ERM_Google_Calendar::busy($id,$date,$s);if(is_wp_error($external))return []; // Google OAuth free-busy checks replace legacy single-ICS conflict checking.
+  $external=$event_only?[]:ERM_Google_Calendar::busy($id,$date,$s);if(is_wp_error($external))return [];
+  if(ERM_Microsoft_Calendar::enabled()&&!$event_only){$ms_busy=ERM_Microsoft_Calendar::ranges($date);if(is_wp_error($ms_busy))return [];foreach($ms_busy as $range)$external[]=$range;} // Google OAuth free-busy checks replace legacy single-ICS conflict checking.
   $slots=[];
   foreach($windows as $window){
    $start=DateTimeImmutable::createFromFormat('!Y-m-d H:i',$date.' '.$window[0],wp_timezone());
