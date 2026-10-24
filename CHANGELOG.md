@@ -1,3 +1,9 @@
+## 1.3.69 — Provider-organized Appointment Integrations
+- Reorganize Appointment Integrations into distinct, styled sections for Google Calendar, Zoom, Microsoft Teams, Microsoft 365 / Outlook Calendar, Discord, FreeConferenceCall.com, Slack, and Other.
+- Add in-page navigation links, responsive two-column credential fields, and a clear Save button, while retaining existing form field names and stored settings.
+- Keep Google OAuth connection and sync history on the same integrations page, in a separate panel, and retain the existing setup documentation.
+- PHP lint and live WordPress UI testing pending.
+
 ## 1.3.68 — Microsoft 365 calendars and consolidated Google settings
 - Add Microsoft 365/Outlook calendar read integration via Microsoft Entra application credentials and Microsoft Graph Calendars.Read application permission.
 - Configure tenant ID, application ID, mailbox owner, secret, and enable toggle in Settings → Appointment Integrations.
