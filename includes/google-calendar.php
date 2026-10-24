@@ -17,11 +17,11 @@ final class ERM_Google_Calendar{
  static function page($embedded=false){
   if(!current_user_can('manage_options'))wp_die('Forbidden',403);
   $o=self::config();
-  echo ($embedded?'<section class="erm-google-connection">':'<div class="wrap">').'<h1>Google Calendar connection</h1><p>Connect a Google account to check busy times and synchronize confirmed appointments. Create a Google Cloud OAuth client (Web application), enable Google Calendar API, and add this redirect URI:</p><code>'.esc_html(self::redirect_uri()).'</code>';
+  echo ($embedded?'<section class="erm-google-connection">':'<div class="wrap">').'<h3>Google account connection</h3><p>Connect a Google account to check busy times and synchronize confirmed appointments. Create a Google Cloud OAuth client (Web application), enable Google Calendar API, and add this redirect URI:</p><code>'.esc_html(self::redirect_uri()).'</code>';
   echo '<form method="post" action="'.esc_url(admin_url('admin-post.php')).'"><input type="hidden" name="action" value="erm_google_save">';
   wp_nonce_field('erm_google_save');
   echo '<p><label>OAuth client ID<br><input class="regular-text" name="client_id" value="'.esc_attr($o['client_id']??'').'"></label></p><p><label>OAuth client secret<br><input class="regular-text" type="password" name="client_secret" autocomplete="new-password" placeholder="'.(!empty($o['client_secret'])?'Saved; leave blank to keep':'Enter secret').'"></label></p><button class="button button-primary">Save OAuth credentials</button></form>';
-  if(!empty($o['refresh_token']))echo '<p><strong>Connected.</strong> A refresh token is saved in WordPress options.</p>';
+  if(!empty($o['refresh_token']))echo '<p><strong>Connected.</strong> An encrypted refresh token is stored locally in this WordPress installation.</p>';
   elseif(!empty($o['client_id']))echo '<p>Credentials saved. Connect the Google account next.</p>';
   if(!empty($o['client_id']))echo '<p><a class="button" href="'.esc_url(wp_nonce_url(admin_url('admin-post.php?action=erm_google_start'),'erm_google_start')).'">Connect / Reauthorize Google</a></p>';
   if(!empty($o['refresh_token']))echo '<p><a class="button" href="'.esc_url(wp_nonce_url(admin_url('admin-post.php?action=erm_google_disconnect'),'erm_google_disconnect')).'">Disconnect</a></p>';
