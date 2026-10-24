@@ -2,19 +2,20 @@
 /**
  * Plugin Name: Form, Cart and Registration Creator
  * Description: Reusable event forms with configurable fields, optional payments, uploads, receipts, and registration management.
- * Version: 1.3.72
+ * Version: 1.3.73
  * Requires PHP: 7.4
  * License: GPL-2.0-or-later
  * Text Domain: event-registration-manager
  */
 if (!defined('ABSPATH')) exit;
+require_once __DIR__.'/includes/secret-store.php';
 require_once __DIR__.'/includes/google-calendar.php';
 require_once __DIR__.'/includes/microsoft-calendar.php';
 require_once __DIR__.'/includes/connect.php';
 require_once __DIR__.'/includes/shipping-providers.php';
 require_once __DIR__.'/includes/shippo.php';
 final class ERM_Plugin {
- const VERSION='1.3.72';
+ const VERSION='1.3.73';
  static $reschedule_entry=0;
  const DEFAULT_FIELDS=[['id'=>'name','label'=>'Full Name','type'=>'text','required'=>true],['id'=>'business','label'=>'Business / Organization','type'=>'text','required'=>false],['id'=>'address','label'=>'Mailing Address','type'=>'textarea','required'=>false],['id'=>'phone','label'=>'Phone Number','type'=>'tel','required'=>false],['id'=>'email','label'=>'Email Address','type'=>'email','required'=>true],['id'=>'products','label'=>'Products Sold','type'=>'textarea','required'=>false]];
  static function init(){ERM_Google_Calendar::init();ERM_Microsoft_Calendar::init();ERM_Connect::init();ERM_Shipping_Providers::init();ERM_Shippo::init();add_action('admin_post_nopriv_erm_manage_appointment',[__CLASS__,'customer_appointment']);add_action('admin_post_erm_manage_appointment',[__CLASS__,'customer_appointment']);add_action('admin_post_erm_reschedule',[__CLASS__,'reschedule']);add_action('wp_ajax_erm_available_slots',[__CLASS__,'available_slots']);add_action('wp_ajax_nopriv_erm_available_slots',[__CLASS__,'available_slots']);add_action('init',[__CLASS__,'types']);add_action('add_meta_boxes',[__CLASS__,'metaboxes']);add_action('save_post_erm_event',[__CLASS__,'save_event']);add_shortcode('event_registration',[__CLASS__,'form']);add_shortcode('event_registrations',[__CLASS__,'public_list']);add_action('admin_post_nopriv_erm_submit',[__CLASS__,'submit']);add_action('admin_post_erm_submit',[__CLASS__,'submit']);add_action('admin_menu',[__CLASS__,'admin_menu']);add_action('admin_head',[__CLASS__,'hide_dashboard_submenu']);add_action('admin_init',[__CLASS__,'redirect_forms_home']);add_action('admin_post_erm_status',[__CLASS__,'status']);add_action('admin_post_erm_delete_submission',[__CLASS__,'delete_submission']);add_action('admin_post_erm_save_payment_accounts',[__CLASS__,'save_payment_accounts']);add_action('admin_post_erm_save_appointment_integrations',[__CLASS__,'save_appointment_integrations']);add_action('admin_post_erm_record_payment',[__CLASS__,'record_payment']);add_action('admin_post_erm_export',[__CLASS__,'export']);add_action('admin_post_erm_reply',[__CLASS__,'reply']);add_action('admin_post_erm_checkin',[__CLASS__,'checkin']);add_action('admin_post_erm_undo_checkin',[__CLASS__,'undo_checkin']);add_action('admin_post_erm_ticket',[__CLASS__,'ticket_page']);add_action('admin_post_nopriv_erm_ticket',[__CLASS__,'ticket_page']);add_action('admin_post_erm_scanner',[__CLASS__,'scanner_page']);add_action('admin_enqueue_scripts',[__CLASS__,'admin_assets']);add_action('admin_footer-edit.php',[__CLASS__,'shortcode_copy_script']);add_action('admin_footer-post.php',[__CLASS__,'appointment_builder_visibility_script']);add_action('admin_footer-post-new.php',[__CLASS__,'appointment_builder_visibility_script']);add_action('wp_enqueue_scripts',[__CLASS__,'styles']);add_filter('manage_erm_event_posts_columns',[__CLASS__,'form_list_columns']);add_action('manage_erm_event_posts_custom_column',[__CLASS__,'form_list_column'],10,2);add_filter('post_row_actions',[__CLASS__,'clone_row_action'],10,2);add_action('admin_post_erm_clone_form',[__CLASS__,'clone_form']);add_action('admin_post_erm_export_form',[__CLASS__,'export_form']);add_action('admin_post_erm_import_form',[__CLASS__,'import_form']);}
@@ -86,7 +87,7 @@ final class ERM_Plugin {
   exit;
  }
  static function defaults(){return ['fields'=>self::DEFAULT_FIELDS,'intro'=>'','hero'=>'','accent'=>'#603f91','payment_mode'=>'optional','amount'=>'0','registration_levels'=>[],'fulfillment_pickup'=>1,'fulfillment_shipping'=>0,'shipping_default'=>0,'shipping_rules'=>[],'shipping_live'=>0,'methods'=>['paypal','venmo','zelle','cashapp','mail'],'paypal'=>'','venmo'=>'','zelle'=>'','cashapp'=>'','payee'=>'','mail_address'=>'','organizer_email'=>get_option('admin_email'),'receipt'=>1,'ack'=>'Thank you! Your registration has been received.','public_fields'=>[],'upload_types'=>['jpg','jpeg','png','webp','pdf'],'upload_mb'=>5,'form_type'=>'registration','calendar_url'=>'','appointment_modes'=>['studio'],'appointment_studio_address'=>'','appointment_travel_note'=>'','appointment_online_platform'=>'zoom','appointment_online_url'=>'','appointment_duration'=>30,'appointment_interval'=>30,'appointment_days'=>14,'appointment_notice'=>0,'appointment_buffer_before'=>0,'appointment_buffer_after'=>0,'appointment_blocked'=>'','appointment_extra_windows'=>'','appointment_ical_url'=>'','appointment_hours'=>['1'=>['09:00','17:00'],'2'=>['09:00','17:00'],'3'=>['09:00','17:00'],'4'=>['09:00','17:00'],'5'=>['09:00','17:00']],'admin_subject'=>'New submission: {form_title} #{entry_id}','admin_template'=>'{fields} {appointment} {items} Total: {total}','customer_subject'=>'Submission received: {form_title} (#{entry_id})','customer_template'=>'','font'=>'inherit','background'=>'#ffffff','text_color'=>'#222222','background_image'=>'','background_opacity'=>35,'label_bg'=>'#ffffff','label_bg_opacity'=>90,'label_color'=>'#222222','heading_color'=>'#222222','products'=>[],'tickets_enabled'=>0];}
- static function settings($id){$saved=get_post_meta($id,'_erm_settings',true);$settings=wp_parse_args(is_array($saved)?$saved:[],self::defaults());$global_integrations=(array)get_option('erm_appointment_integrations',[]);if(!empty($global_integrations['google_booking_url']))$settings['calendar_url']=$global_integrations['google_booking_url'];if(!empty($global_integrations['google_calendar_id']))$settings['google_calendar_id']=$global_integrations['google_calendar_id'];foreach((array)($global_integrations['provider_credentials']??[]) as $key=>$value)if(in_array($key,['zoom_account_id','zoom_client_id','zoom_client_secret','zoom_user','teams_tenant_id','teams_client_id','teams_client_secret','teams_user_id','discord_bot_token','discord_channel_id'],true)&&is_string($value)&&$value!=='')$settings[$key]=$value;$global=get_option('erm_payment_accounts',false);if(is_array($global))foreach(self::payment_account_keys() as $key)$settings[$key]=$global[$key]??'';return $settings;}
+ static function settings($id){$saved=get_post_meta($id,'_erm_settings',true);$settings=wp_parse_args(is_array($saved)?$saved:[],self::defaults());$global_integrations=ERM_Secret_Store::read('erm_appointment_integrations',['provider_credentials.zoom_client_secret','provider_credentials.teams_client_secret','provider_credentials.discord_bot_token']);if(!empty($global_integrations['google_booking_url']))$settings['calendar_url']=$global_integrations['google_booking_url'];if(!empty($global_integrations['google_calendar_id']))$settings['google_calendar_id']=$global_integrations['google_calendar_id'];foreach((array)($global_integrations['provider_credentials']??[]) as $key=>$value)if(in_array($key,['zoom_account_id','zoom_client_id','zoom_client_secret','zoom_user','teams_tenant_id','teams_client_id','teams_client_secret','teams_user_id','discord_bot_token','discord_channel_id'],true)&&is_string($value)&&$value!=='')$settings[$key]=$value;$global=get_option('erm_payment_accounts',false);if(is_array($global))foreach(self::payment_account_keys() as $key)$settings[$key]=$global[$key]??'';return $settings;}
  static function payment_account_keys(){return ['paypal','venmo','zelle','cashapp','payee','mail_address'];}
  static function payment_setup_guide(){
   $providers=[
@@ -107,7 +108,7 @@ final class ERM_Plugin {
  }
  static function appointment_integrations_page(){
   if(!current_user_can('manage_options'))wp_die('Forbidden',403);
-  $o=(array)get_option('erm_appointment_integrations',[]);
+  $o=ERM_Secret_Store::read('erm_appointment_integrations',['provider_credentials.zoom_client_secret','provider_credentials.teams_client_secret','provider_credentials.discord_bot_token']);
   $formats=['zoom'=>'Zoom','teams'=>'Microsoft Teams','discord'=>'Discord','slack'=>'Slack','freeconferencecall'=>'FreeConferenceCall.com','other'=>'Other'];
   $enabled=(array)($o['formats']??['zoom']);
   echo '<div class="wrap"><h1>Appointment integrations</h1><p>Choose the online meeting services you offer and the Google calendars that block appointment availability. In-person visits do not require an online meeting.</p>';
@@ -164,7 +165,7 @@ final class ERM_Plugin {
   if($embed!==''&&(!wp_http_validate_url($embed)||strpos($embed,'https://calendar.google.com/calendar/embed')!==0))$embed='';
   $links=[];$posted=isset($_POST['meeting_links'])&&is_array($_POST['meeting_links'])?wp_unslash($_POST['meeting_links']):[];
   foreach($allowed as $service){$url=esc_url_raw(trim(is_string($posted[$service]??null)?$posted[$service]:''));if($url!==''&&wp_http_validate_url($url)&&strpos($url,'https://')===0)$links[$service]=$url;}
-  $previous=(array)get_option('erm_appointment_integrations',[]);
+  $previous=ERM_Secret_Store::read('erm_appointment_integrations',['provider_credentials.zoom_client_secret','provider_credentials.teams_client_secret','provider_credentials.discord_bot_token']);
   $credentials=(array)($previous['provider_credentials']??[]);
   $posted_credentials=isset($_POST['provider_credentials'])&&is_array($_POST['provider_credentials'])?wp_unslash($_POST['provider_credentials']):[];
   foreach(['zoom_account_id','zoom_client_id','zoom_client_secret','zoom_user','teams_tenant_id','teams_client_id','teams_client_secret','teams_user_id','discord_bot_token','discord_channel_id'] as $key){
@@ -179,8 +180,8 @@ final class ERM_Plugin {
   $ms_post=isset($_POST['ms'])&&is_array($_POST['ms'])?wp_unslash($_POST['ms']):[];
   foreach(['tenant_id','client_id','user_id'] as $key)$ms_new[$key]=sanitize_text_field($ms_post[$key]??'');
   $secret=trim((string)($ms_post['client_secret']??''));$ms_new['client_secret']=$secret!==''?$secret:($ms_old['client_secret']??'');
-  update_option('erm_microsoft_calendar',$ms_new,false);
-  update_option('erm_appointment_integrations',['formats'=>$formats,'meeting_links'=>$links,'calendar_ids'=>array_slice(array_values(array_unique($ids)),0,30),'calendar_embed_url'=>$embed,'provider_credentials'=>$credentials,'google_booking_url'=>$booking_url,'google_calendar_id'=>$calendar_id],false);
+  $ms_result=ERM_Secret_Store::write('erm_microsoft_calendar',$ms_new,['client_secret','refresh_token','access_token']);if(is_wp_error($ms_result))wp_die(esc_html($ms_result->get_error_message()));
+  $integration_result=ERM_Secret_Store::write('erm_appointment_integrations',['formats'=>$formats,'meeting_links'=>$links,'calendar_ids'=>array_slice(array_values(array_unique($ids)),0,30),'calendar_embed_url'=>$embed,'provider_credentials'=>$credentials,'google_booking_url'=>$booking_url,'google_calendar_id'=>$calendar_id],['provider_credentials.zoom_client_secret','provider_credentials.teams_client_secret','provider_credentials.discord_bot_token']);if(is_wp_error($integration_result))wp_die(esc_html($integration_result->get_error_message()));
   wp_safe_redirect(add_query_arg('saved','1',admin_url('edit.php?post_type=erm_event&page=erm-appointment-integrations')));exit;
  }
  static function payment_accounts_page(){
