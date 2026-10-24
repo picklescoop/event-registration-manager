@@ -162,7 +162,7 @@ final class ERM_Plugin {
    $id=trim(sanitize_text_field($line));
    if($id!==''&&strlen($id)<=250&&preg_match('/^[a-zA-Z0-9@._#-]+$/',$id))$ids[]=$id;
   }
-  $embed=esc_url_raw(trim((string)wp_unslash($_POST['calendar_embed_url']??'')));
+  $embed=esc_url_raw(trim((string)wp_unslash($_POST['calendar_embed_url']??((array)get_option('erm_appointment_integrations',[]))['calendar_embed_url']??'')));
   if($embed!==''&&(!wp_http_validate_url($embed)||strpos($embed,'https://calendar.google.com/calendar/embed')!==0))$embed='';
   $links=[];$posted=isset($_POST['meeting_links'])&&is_array($_POST['meeting_links'])?wp_unslash($_POST['meeting_links']):[];
   foreach($allowed as $service){$url=esc_url_raw(trim(is_string($posted[$service]??null)?$posted[$service]:''));if($url!==''&&wp_http_validate_url($url)&&strpos($url,'https://')===0)$links[$service]=$url;}
