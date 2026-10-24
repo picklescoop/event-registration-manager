@@ -1,3 +1,8 @@
+## 1.3.74 — Critical error hotfix
+- Restore missing closing echo statement, method brace, and class brace in includes/connect.php introduced during the local-only connection UI update.
+- Addresses PHP parse error: Unclosed '{' on line 18 in includes/connect.php (reported October 24, 2026).
+- This commit fixes the identified parse defect; production activation and complete PHP linting of the repository are still pending.
+
 ## 1.3.73 — Local integration secret protection
 - Encrypt Google and Microsoft OAuth client secrets, access tokens and refresh tokens at rest using authenticated AES-256-GCM and WordPress site-specific security salts.
 - Encrypt Zoom, Teams and Discord secrets in local appointment integration settings; retain existing password-masked admin inputs and WordPress capability/nonce checks.
