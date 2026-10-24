@@ -1,3 +1,12 @@
+## 1.3.73 — Local integration secret protection
+- Encrypt Google and Microsoft OAuth client secrets, access tokens and refresh tokens at rest using authenticated AES-256-GCM and WordPress site-specific security salts.
+- Encrypt Zoom, Teams and Discord secrets in local appointment integration settings; retain existing password-masked admin inputs and WordPress capability/nonce checks.
+- Migrate previously plaintext supported integration secrets to encrypted option values on access where encryption is available.
+- Refuse new secret writes when local encryption is unavailable instead of silently storing plaintext.
+- Existing local provider integrations remain local; no external broker or Super Forms server receives credentials.
+- Rotating WordPress security salts without preserving or reconnecting these integrations makes encrypted secrets unreadable. Database backups and authorized WordPress code execution still require standard host protections.
+- PHP lint, automated regression tests and live WordPress validation remain pending.
+
 ## 1.3.72 — Local-only integrations
 - Remove the proposed shared OAuth broker and its external-service opt-in UI and handler.
 - Update integration readiness panels to specify direct provider authorization and locally stored per-installation credentials and tokens.
