@@ -1,3 +1,10 @@
+## 1.3.75 — Consolidated Google Calendar integration settings
+- Combine Google Calendar configuration, OAuth credentials, Connect/Reauthorize/Disconnect, and synchronization history into one Google Calendar admin card.
+- Remove the duplicate Google Calendar connection card and the redundant display-only calendar embed URL input; retain any previously saved embed URL for compatibility.
+- Preserve Google booking page URL, destination calendar ID, and busy calendar IDs, and retain existing connection credentials.
+- Clarify encrypted local refresh-token storage in the connection status.
+- PHP lint and live WordPress validation remain pending.
+
 ## 1.3.74 — Critical error hotfix
 - Restore missing closing echo statement, method brace, and class brace in includes/connect.php introduced during the local-only connection UI update.
 - Addresses PHP parse error: Unclosed '{' on line 18 in includes/connect.php (reported October 24, 2026).
