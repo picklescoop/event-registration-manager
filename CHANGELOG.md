@@ -1,3 +1,11 @@
+## 1.3.70 — Microsoft account sign-in for personal and business calendars
+- Add delegated Microsoft OAuth authorization for Microsoft 365 work/school accounts and personal Outlook.com, Hotmail, and Live accounts, using the Microsoft common authority.
+- Add Sign in with Microsoft and Disconnect controls in Appointment Integrations, with an explicit redirect URI and connection status.
+- Read the signed-in user's calendar through Microsoft Graph /me/calendarView; preserve the previous application-credentials flow for existing configurations.
+- Retain Google account sign-in and Google OAuth configuration on the same Appointment Integrations page.
+- A Microsoft Entra app registration accepting personal and organizational accounts, delegated Calendar permissions, and a client secret is still required; the plugin cannot create that provider-side app registration automatically.
+- PHP lint and live Microsoft/Google OAuth end-to-end tests pending.
+
 ## 1.3.69 — Provider-organized Appointment Integrations
 - Reorganize Appointment Integrations into distinct, styled sections for Google Calendar, Zoom, Microsoft Teams, Microsoft 365 / Outlook Calendar, Discord, FreeConferenceCall.com, Slack, and Other.
 - Add in-page navigation links, responsive two-column credential fields, and a clear Save button, while retaining existing form field names and stored settings.
