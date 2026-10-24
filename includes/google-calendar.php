@@ -109,6 +109,34 @@ final class ERM_Google_Calendar{
   wp_safe_redirect(add_query_arg('retried','1',admin_url('edit.php?post_type=erm_event&page=erm-google-calendar')));exit;
  }
  static function calendar_id($settings){return rawurlencode($settings['google_calendar_id']??'primary');}
+ static function matching_event_windows($date,$settings){
+  if(empty(self::config()['refresh_token']))return new WP_Error('google_not_connected','Google Calendar must be connected for event-based availability.');
+  $keyword=trim((string)($settings['appointment_event_keyword']??'meeting'));
+  if($keyword==='')return [];
+  try{$day=new DateTimeImmutable($date.' 00:00:00',wp_timezone());}catch(Exception $e){return new WP_Error('bad_date','Invalid date');}
+  $configured=(array)get_option('erm_appointment_integrations',[]);
+  $ids=!empty($configured['calendar_ids'])?(array)$configured['calendar_ids']:[(string)($settings['google_calendar_id']??'primary')];
+  $ids=array_values(array_unique(array_filter(array_map('trim',$ids))));
+  $windows=[];
+  foreach($ids as $id){
+   $params=['timeMin'=>$day->format(DateTimeInterface::RFC3339),'timeMax'=>$day->modify('+1 day')->format(DateTimeInterface::RFC3339),'singleEvents'=>'true','maxResults'=>250];
+   $page='';
+   do{
+    if($page!=='')$params['pageToken']=$page;
+    $path='calendars/'.rawurlencode($id).'/events?'.http_build_query($params,'','&',PHP_QUERY_RFC3986);
+    $response=self::api('GET',$path);
+    if(is_wp_error($response))return $response;
+    foreach((array)($response['items']??[]) as $item){
+     if(($item['status']??'')==='cancelled'||stripos((string)($item['summary']??''),$keyword)===false)continue;
+     $from=$item['start']['dateTime']??null;$to=$item['end']['dateTime']??null;
+     if(!$from||!$to)continue; // Ignore all-day events: guest-speaker slots require timed meetings.
+     try{$start=(new DateTimeImmutable($from))->getTimestamp();$end=(new DateTimeImmutable($to))->getTimestamp();if($end>$start)$windows[]=[$start,$end];}catch(Exception $e){}
+    }
+    $page=(string)($response['nextPageToken']??'');
+   }while($page!=='');
+  }
+  return $windows;
+ }
  static function busy($event,$date,$settings){
   if(empty(self::config()['refresh_token']))return [];
   $tz=wp_timezone();$day=DateTimeImmutable::createFromFormat('!Y-m-d',$date,$tz);
